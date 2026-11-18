@@ -1,6 +1,6 @@
 <script lang="ts">
   import { flip } from 'svelte/animate'
-  import { CodeXml, Eye, House, PanelLeft, Plus, Search, SquareSplitHorizontal, X } from '@lucide/svelte'
+  import { CodeXml, Eye, House, PanelLeft, Plus, Search, SquareSplitHorizontal, X, Waypoints } from '@lucide/svelte'
   import { noteName } from '../lib/notes.ts'
   import { native } from '../lib/storage.ts'
   import type { Mode, Workspace } from '../lib/workspace.svelte.ts'
@@ -49,6 +49,7 @@
   </div>
   <button type="button" class="icon-button tab-add" aria-label="New tab" title="New note (⌘N)" disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={17} /></button>
   <div class="drag-space" data-tauri-drag-region></div>
+  <button type="button" class="icon-button graph-tab" aria-label="Graph" aria-pressed={workspace.page === 'graph'} title="Graph (⌘⇧G)" onclick={() => workspace.show('graph')}><Waypoints size={15} strokeWidth={1.6} /></button>
   {#if workspace.page === 'note' && workspace.active}
     <div class="view-modes" role="group" aria-label="Document view">
       {#each modes as mode (mode.id)}

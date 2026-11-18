@@ -39,6 +39,18 @@ export function renderBody(body: string) {
 
 export function renderNote(text: string) { return renderBody(splitNote(text).body) }
 
+export function noteLinks(text: string): string[] {
+  const links = new Set<string>()
+  markdown.walkTokens(markdown.lexer(splitNote(text).body), (token) => {
+    if (token.type === 'wikiLink' && typeof token.target === 'string') links.add(token.target.trim())
+    if (token.type !== 'link') return
+    const { href } = token as Tokens.Link
+    if (!/\.m(?:d|arkdown)(?:#|$)/i.test(href) || /^(?:[\w+.-]+:|\/\/)/.test(href)) return
+    try { links.add(decodeURIComponent(href)) } catch { /* Invalid URL. */ }
+  })
+  return [...links]
+}
+
 export function hoverExcerpt(text: string) {
   const body = splitNote(text).body.replace(/^# [^\n]*(?:\r?\n|$)/, '').trim()
   return renderBody(body.slice(0, 950))

@@ -3,7 +3,7 @@ import { moveTab, noteName, resolveNote, scanTasks, toggleTask, type Note, type 
 import { getStorage, type Storage, type WorkspaceInfo } from './storage.ts'
 
 export type Mode = 'editor' | 'split' | 'preview'
-export type Page = 'home' | 'tasks' | 'note'
+export type Page = 'home' | 'tasks' | 'note' | 'graph'
 
 export class DocumentSession {
   text = $state('')
@@ -171,7 +171,7 @@ export class Workspace {
     }
   }
 
-  show(page: 'home' | 'tasks') {
+  show(page: 'home' | 'tasks' | 'graph') {
     const active = this.active
     active?.syncView?.()
     if (active?.text !== active?.saved && active) void this.save(active)
