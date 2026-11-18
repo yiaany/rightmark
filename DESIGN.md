@@ -97,9 +97,11 @@ The title bar is 44 px high and the sidebar is 248 px wide at the default macOS 
 
 **Hover preview:** After a deliberate pointer pause, a small card opens beside the file without moving the document or creating a tab.
 
+**Tooltips:** Rounded, theme-aware labels with a thin border and a muted shortcut when available. Delay the first pointer hint; show nearby hints and keyboard-focus hints without an animation. Keep native browser tooltips out of the app chrome.
+
 **Slash menu:** A dark canvas-colored picker (white in Light) sits beside the slash. Use a thin border, 14 px corners, 34 px rows, and subtle rules between Text, List, and Blocks. Text and headings show typographic previews; the blue checkbox glyph is the only colored icon. Selection uses a neutral fill. The menu opens instantly and scrolls independently.
 
-**Selection toolbar:** Put a compact, pill-shaped formatting bar above a text selection, or below when there is no room. Keep focus in the editor for pointer formatting; link editing can take focus. `Option–F10` enters the toolbar from a selection. The left gutter shows a drag handle for paragraphs, headings, and list items that have siblings. Show an insertion line during the drag, with no animation lag behind the pointer.
+**Selection toolbar:** Put a compact, pill-shaped formatting bar above a text selection, or below when there is no room. Keep focus in the editor for pointer formatting; link editing can take focus. `Option–F10` enters the toolbar from a selection. A direct hover on the left gutter reveals the matching block handle without crossing the text first. Show an insertion line during the drag, with no animation lag behind the pointer.
 
 **Caret:** Typed characters appear immediately. In the visual editor, a 65 ms glide applies only to short horizontal caret movement. Use the native caret for selection, IME, and reduced motion.
 

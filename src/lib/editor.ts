@@ -63,7 +63,10 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
     content: inputReason ? '' : body,
     contentType: 'markdown',
     editorProps: {
-      attributes: { 'aria-label': 'Write note', role: 'textbox', 'aria-multiline': 'true', spellcheck: 'true' },
+      attributes: {
+        'aria-label': 'Write note', role: 'textbox', 'aria-multiline': 'true',
+        spellcheck: 'false', autocorrect: 'off', autocapitalize: 'off', autocomplete: 'off',
+      },
       // Markdown is the storage format. Do not admit HTML that has no Markdown form.
       clipboardTextParser: (content, _context, _plain, view) => {
         const lines = content.replace(/\r\n/g, '\n').split('\n')

@@ -69,7 +69,7 @@
         }}></div>
       <section class="preview-pane" aria-label="Live preview">
         <div class="pane-label">Live preview
-          <button type="button" class="icon-button" aria-pressed={linked} aria-label="Link pane scrolling" title="Link pane scrolling" onclick={() => { linked = !linked }}>{#if linked}<Link2 size={15} />{:else}<Unlink2 size={15} />{/if}</button>
+          <button type="button" class="icon-button" aria-pressed={linked} aria-label="Link pane scrolling" data-tooltip="Link pane scrolling" onclick={() => { linked = !linked }}>{#if linked}<Link2 size={15} />{:else}<Unlink2 size={15} />{/if}</button>
         </div>
         <div class="split-preview" bind:this={preview} onscroll={fromPreview}>
           <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (delegates to native links) -->

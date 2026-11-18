@@ -91,14 +91,14 @@
 </script>
 
 <div class="selection-toolbar" class:above class:popup-above={popupAbove} bind:this={element} bind:offsetWidth={width} style:left="{center}px" style:top="{y}px" role="toolbar" tabindex="-1" aria-label="Text formatting" onkeydown={onKey}>
-  <button type="button" class="text-style-button" aria-label="Text style" title="Text style" aria-expanded={popup === 'style'} onmousedown={preserve} onclick={() => void toggle('style')}>Aa <ChevronDown size={11} /></button>
+  <button type="button" class="text-style-button" aria-label="Text style" data-tooltip="Text style" aria-expanded={popup === 'style'} onmousedown={preserve} onclick={() => void toggle('style')}>Aa <ChevronDown size={11} /></button>
   <span class="selection-separator" aria-hidden="true"></span>
   {#each formats as format (format.name)}
-    <button type="button" aria-label={format.label} title={'shortcut' in format ? `${format.label} (${format.shortcut})` : format.label} aria-pressed={current.marks.has(format.name)} onmousedown={preserve} onclick={() => { popup = undefined; format.run(editor) }}><format.icon size={16} strokeWidth={1.65} /></button>
+    <button type="button" aria-label={format.label} data-tooltip={format.label} data-tooltip-key={'shortcut' in format ? format.shortcut : undefined} aria-pressed={current.marks.has(format.name)} onmousedown={preserve} onclick={() => { popup = undefined; format.run(editor) }}><format.icon size={16} strokeWidth={1.65} /></button>
   {/each}
   <span class="selection-separator" aria-hidden="true"></span>
-  <button type="button" aria-label={current.marks.has('link') ? 'Edit link' : 'Add link'} title={current.marks.has('link') ? 'Edit link' : 'Add link'} class:linked={current.marks.has('link')} aria-expanded={popup === 'link'} onmousedown={preserve} onclick={() => void toggle('link')}><Link2 size={17} strokeWidth={1.6} /></button>
-  <button type="button" aria-label="More formatting options" title="More formatting options" aria-expanded={popup === 'more'} onmousedown={preserve} onclick={() => void toggle('more')}><Ellipsis size={17} strokeWidth={1.75} /></button>
+  <button type="button" aria-label={current.marks.has('link') ? 'Edit link' : 'Add link'} data-tooltip={current.marks.has('link') ? 'Edit link' : 'Add link'} class:linked={current.marks.has('link')} aria-expanded={popup === 'link'} onmousedown={preserve} onclick={() => void toggle('link')}><Link2 size={17} strokeWidth={1.6} /></button>
+  <button type="button" aria-label="More formatting options" data-tooltip="More formatting options" aria-expanded={popup === 'more'} onmousedown={preserve} onclick={() => void toggle('more')}><Ellipsis size={17} strokeWidth={1.75} /></button>
 
   {#if popup === 'style'}
     <div class="selection-popover selection-styles" role="group" aria-label="Text style options">
@@ -110,7 +110,7 @@
     <form class="selection-popover selection-link" onsubmit={saveLink}>
       <label for="selection-link-url">Link address</label>
       <div>
-        <input id="selection-link-url" aria-invalid={!!error} bind:this={input} bind:value={url} oninput={() => { error = '' }} placeholder="https://… or Note.md" spellcheck="false" autocomplete="off" />
+        <input id="selection-link-url" aria-invalid={!!error} bind:this={input} bind:value={url} oninput={() => { error = '' }} placeholder="https://… or Note.md" spellcheck={false} autocorrect="off" autocapitalize="off" autocomplete="off" />
         <button type="submit">Apply</button>
       </div>
       {#if error}<p role="alert">{error}</p>{/if}

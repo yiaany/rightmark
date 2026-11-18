@@ -84,10 +84,10 @@
     {/each}
   </nav>
   <div class="side-section">
-    <span title={workspace.info?.sample ? undefined : workspace.info?.name}>{workspace.info?.sample ? 'Files' : workspace.info?.name ?? 'Files'}</span>
+    <span data-tooltip={workspace.info?.sample ? undefined : workspace.info?.name}>{workspace.info?.sample ? 'Files' : workspace.info?.name ?? 'Files'}</span>
     <div class="file-actions">
-      <button type="button" class="icon-button" aria-label="Open folder" title="Open folder…" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}><FolderOpen size={16} strokeWidth={1.6} /></button>
-      <button class="icon-button" type="button" aria-label="New note" title="New note" disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={17} strokeWidth={1.6} /></button>
+      <button type="button" class="icon-button" aria-label="Open folder" data-tooltip="Open folder…" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}><FolderOpen size={16} strokeWidth={1.6} /></button>
+      <button class="icon-button" type="button" aria-label="New note" data-tooltip="New note" data-tooltip-key="⌘N" disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={17} strokeWidth={1.6} /></button>
     </div>
   </div>
   <div class="file-tree" onscroll={clearPeek}>
@@ -95,7 +95,7 @@
     {#if !workspace.notes.length}<p>{workspace.busy ? 'Opening folder…' : 'No Markdown files'}</p>{/if}
   </div>
   <div class="sidebar-footer">
-    <button type="button" class="side-row" class:selected={workspace.page === 'settings'} aria-current={workspace.page === 'settings' ? 'page' : undefined} title="Settings (⌘,)" onclick={() => workspace.show('settings')}><Settings2 size={17} strokeWidth={1.65} /><span>Settings</span></button>
+    <button type="button" class="side-row" class:selected={workspace.page === 'settings'} aria-current={workspace.page === 'settings' ? 'page' : undefined} data-tooltip="Settings" data-tooltip-key="⌘," onclick={() => workspace.show('settings')}><Settings2 size={17} strokeWidth={1.65} /><span>Settings</span></button>
   </div>
 </aside>
 

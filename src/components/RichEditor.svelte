@@ -212,12 +212,12 @@
   <div class="document-column">
     {#if ready && !reason}
       <div class="format-toolbar" role="group" aria-label="Formatting">
-        <button type="button" class="icon-button" aria-label="Bold" title="Bold" aria-pressed={marks.includes('bold')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleBold().run()}><Bold size={16} /></button>
-        <button type="button" class="icon-button" aria-label="Italic" title="Italic" aria-pressed={marks.includes('italic')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleItalic().run()}><Italic size={16} /></button>
-        <button type="button" class="icon-button" aria-label="Inline code" title="Inline code" aria-pressed={marks.includes('code')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleCode().run()}><Code size={16} /></button>
+        <button type="button" class="icon-button" aria-label="Bold" data-tooltip="Bold" data-tooltip-key="⌘B" aria-pressed={marks.includes('bold')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleBold().run()}><Bold size={16} /></button>
+        <button type="button" class="icon-button" aria-label="Italic" data-tooltip="Italic" data-tooltip-key="⌘I" aria-pressed={marks.includes('italic')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleItalic().run()}><Italic size={16} /></button>
+        <button type="button" class="icon-button" aria-label="Inline code" data-tooltip="Inline code" aria-pressed={marks.includes('code')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleCode().run()}><Code size={16} /></button>
         <span class="toolbar-divider"></span>
-        <button type="button" class="icon-button" aria-label="Bullet list" title="Bullet list" onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleBulletList().run()}><List size={16} /></button>
-        <button type="button" class="icon-button" aria-label="Task list" title="Task list" aria-pressed={marks.includes('taskList')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleTaskList().run()}><Check size={16} /></button>
+        <button type="button" class="icon-button" aria-label="Bullet list" data-tooltip="Bullet list" onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleBulletList().run()}><List size={16} /></button>
+        <button type="button" class="icon-button" aria-label="Task list" data-tooltip="Task list" aria-pressed={marks.includes('taskList')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleTaskList().run()}><Check size={16} /></button>
         {#if marks.includes('table')}
           <div class="table-tools">
             <button type="button" onmousedown={buttonDown} onclick={() => instance?.chain().focus().addRowAfter().run()}><Plus size={12} /> Row</button>

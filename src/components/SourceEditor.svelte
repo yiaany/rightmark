@@ -44,6 +44,6 @@
 </script>
 
 <div class="source-editor" bind:this={host}>
-  {#if problem}<textarea aria-label="Markdown source" value={document.text} oninput={(event) => onChange(event.currentTarget.value)}></textarea>
+  {#if problem}<textarea aria-label="Markdown source" spellcheck={false} autocorrect="off" autocapitalize="off" autocomplete="off" value={document.text} oninput={(event) => onChange(event.currentTarget.value)}></textarea>
   {:else if !ready}<p class="pane-message">Opening source…</p>{/if}
 </div>

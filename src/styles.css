@@ -80,6 +80,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 a { color: var(--ink); text-underline-offset: .19em; text-decoration-color: var(--muted); }
 kbd { font: 11px var(--ui); color: var(--muted); white-space: nowrap; }
 
+.app-tooltip { position: fixed; z-index: 30; pointer-events: none; display: flex; align-items: center; gap: 7px; max-width: min(340px, calc(100vw - 16px)); padding: 5px 8px; color: var(--ink); background: var(--surface); border: 1px solid var(--edge); border-radius: 8px; box-shadow: var(--shadow); font-size: 12px; font-weight: 530; line-height: 1.35; overflow-wrap: anywhere; }
+.app-tooltip[hidden] { display: none; }
+.app-tooltip kbd { color: var(--muted); }
+
 .app-shell { --workspace-leading: 6px; display: grid; grid-template-rows: var(--title-height) minmax(0, 1fr); height: 100%; background: var(--chrome); user-select: none; }
 .app-shell.with-sidebar { --workspace-leading: var(--sidebar-width); }
 .titlebar { display: flex; align-items: center; min-width: 0; padding-right: 11px; }

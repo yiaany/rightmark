@@ -3,6 +3,7 @@ import { Plugin } from '@tiptap/pm/state'
 import { blockAt, moveBlock, type MovableBlock } from './block-move.ts'
 
 const handleWidth = 23
+const gutterWidth = 36
 
 export const blockDrag = Extension.create({
   name: 'blockDrag',
@@ -28,7 +29,8 @@ export const blockDrag = Extension.create({
         handle.className = 'block-drag-handle'
         handle.style.width = `${handleWidth}px`
         handle.setAttribute('aria-label', 'Drag block to reorder')
-        handle.title = 'Drag to reorder · Option–Shift–↑ / ↓'
+        handle.dataset.tooltip = 'Drag to reorder'
+        handle.dataset.tooltipKey = '⌥⇧↑ / ↓'
         handle.tabIndex = -1
         const line = document.createElement('div')
         line.className = 'block-drop-line'
@@ -50,21 +52,28 @@ export const blockDrag = Extension.create({
 
         function hover(event: PointerEvent) {
           if (drag || event.target === handle) return
-          if (hovered && event.target instanceof Node && !view.dom.contains(event.target)) {
+          if (!view.editable || view.composing || !view.state.selection.empty || event.buttons || event.pointerType === 'touch' || !(event.target instanceof Node)) { hideHandle(); return }
+          const scroller = pane()
+          if (!scroller?.contains(event.target)) { hideHandle(); return }
+          const withinEditor = view.dom.contains(event.target)
+          if (hovered && !withinEditor) {
             const hit = handle.getBoundingClientRect()
             if (event.clientX >= hit.left - 3 && event.clientX <= hit.right + 3 && event.clientY >= hit.top - 3 && event.clientY <= hit.bottom + 3) return
           }
-          if (!view.editable || view.composing || !view.state.selection.empty || event.buttons || !(event.target instanceof Node) || !view.dom.contains(event.target)) {
-            hideHandle()
-            return
-          }
-          const found = view.posAtCoords({ left: event.clientX, top: event.clientY })
-          const block = found && blockAt(view.state.doc, found.pos)
+          const editorRect = view.dom.getBoundingClientRect()
+          const { clientX: x, clientY: y } = event
+          const withinGutter = x >= editorRect.left - gutterWidth && x < editorRect.left && y >= editorRect.top && y <= editorRect.bottom
+          if (!withinEditor && !withinGutter) { hideHandle(); return }
+          // The empty gutter maps to the row at the same height, even on first entry.
+          const probe = withinGutter ? editorRect.left + Math.min(gutterWidth, editorRect.width / 2) : x
+          const found = view.posAtCoords({ left: probe, top: y })
+          const doc = view.state.doc
+          const block = found && (blockAt(doc, found.pos) ?? (found.inside >= 0 ? blockAt(doc, found.inside + 1) : undefined))
           const element = block && grab(block)
           if (!block || !(element instanceof Element)) { hideHandle(); return }
           const rect = element.getBoundingClientRect()
-          const bounds = pane()?.getBoundingClientRect()
-          if (!bounds || rect.top < bounds.top || rect.top + 22 > bounds.bottom) { hideHandle(); return }
+          const bounds = scroller.getBoundingClientRect()
+          if (y < rect.top - 3 || y > rect.bottom + 3 || rect.top < bounds.top || rect.top + 22 > bounds.bottom) { hideHandle(); return }
           hovered = block
           handle.style.transform = `translate3d(${Math.max(bounds.left + 2, rect.left - handleWidth)}px, ${rect.top + 1}px, 0)`
           handle.hidden = false

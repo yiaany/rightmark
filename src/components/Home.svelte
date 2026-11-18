@@ -18,7 +18,7 @@
       {#if workspace.recent.length}
         <div class="recent-grid">
           {#each workspace.recent.slice(0, 6) as path (path)}
-            <button type="button" class="recent-note" title={path} onclick={() => void workspace.open(path)}>
+            <button type="button" class="recent-note" data-tooltip={path} onclick={() => void workspace.open(path)}>
               <FileText size={17} strokeWidth={1.55} /><span><strong>{noteName(path)}</strong>{#if noteFolder(path)}<small>{noteFolder(path)}</small>{/if}</span><ArrowUpRight class="recent-arrow" size={13} strokeWidth={1.55} />
             </button>
           {/each}

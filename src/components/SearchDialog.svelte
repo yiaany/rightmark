@@ -39,9 +39,9 @@
 <dialog class="search-dialog" aria-label="Search notes" bind:this={dialog} onclose={() => { open = false }} onclick={(event) => { if (event.target === dialog) dialog.close() }}>
   <div class="search-input">
     <Search size={20} />
-    <input bind:this={input} bind:value={query} oninput={() => { index = 0 }} onkeydown={keys}
+    <input bind:this={input} bind:value={query} oninput={() => { index = 0 }} onkeydown={keys} spellcheck={false} autocorrect="off" autocapitalize="off" autocomplete="off"
       aria-label="Search notes" placeholder="Search titles or text…" role="combobox" aria-expanded={open} aria-controls="search-results" aria-activedescendant={results[index] ? `result-${index}` : undefined} />
-    <button type="button" title="Close search" aria-label="Close search" onclick={() => dialog.close()}><kbd>Esc</kbd></button>
+    <button type="button" data-tooltip="Close search" aria-label="Close search" onclick={() => dialog.close()}><kbd>Esc</kbd></button>
   </div>
   <div class="search-results" id="search-results" role="listbox" aria-label="Search results">
     {#each results as note, row (note.path)}

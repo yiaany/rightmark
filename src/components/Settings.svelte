@@ -16,7 +16,7 @@
         <ThemeOptions {theme} onChange={onTheme} />
       </div>
       <div class="setting-row">
-        <div class="setting-label"><FolderOpen size={17} strokeWidth={1.55} /><div><h2>Workspace folder</h2><p title={workspace.info?.name}>{workspace.info?.name ?? 'No folder open'}</p></div></div>
+        <div class="setting-label"><FolderOpen size={17} strokeWidth={1.55} /><div><h2>Workspace folder</h2><p data-tooltip={workspace.info?.name}>{workspace.info?.name ?? 'No folder open'}</p></div></div>
         <button class="button secondary" type="button" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}>Change folder</button>
       </div>
     </div>

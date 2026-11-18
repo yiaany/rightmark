@@ -45,10 +45,10 @@
   <div class="graph-tools">
     <div class="graph-scope" role="group" aria-label="Graph scope">
       <button type="button" aria-pressed={!local} onclick={() => { local = false }}>All notes</button>
-      <button type="button" disabled={!workspace.active} aria-pressed={local} title={workspace.active ? 'Show notes related to the last open note' : 'Open a note to use the local graph'} onclick={() => { local = true }}>Local</button>
+      <button type="button" disabled={!workspace.active} aria-pressed={local} data-tooltip={workspace.active ? 'Show notes related to the last open note' : 'Open a note to use the local graph'} onclick={() => { local = true }}>Local</button>
     </div>
     <details class="graph-settings">
-      <summary title="Graph settings" aria-label="Graph settings"><SlidersHorizontal size={15} strokeWidth={1.55} /></summary>
+      <summary data-tooltip="Graph settings" aria-label="Graph settings"><SlidersHorizontal size={15} strokeWidth={1.55} /></summary>
       <div>
         {#if local}
           <label>Depth <select bind:value={depth}><option value={1}>1</option><option value={2}>2</option><option value={3}>3</option></select></label>
@@ -75,9 +75,9 @@
     <div class="graph-caption">{noteName(hovered || root)}{#if noteFolder(hovered || root)}<small>{noteFolder(hovered || root)}</small>{/if}</div>
   {/if}
   <div class="graph-camera" role="group" aria-label="Graph camera">
-    <button class="icon-button" aria-label="Zoom out" title="Zoom out" onclick={() => controls?.zoom(1 / 1.25)}><Minus size={15} /></button>
-    <button class="icon-button" aria-label="Zoom in" title="Zoom in" onclick={() => controls?.zoom(1.25)}><Plus size={15} /></button>
-    <button class="icon-button fit-graph" aria-label="Fit graph" title="Fit graph" onclick={fit}><Focus size={15} strokeWidth={1.55} /></button>
+    <button class="icon-button" aria-label="Zoom out" data-tooltip="Zoom out" onclick={() => controls?.zoom(1 / 1.25)}><Minus size={15} /></button>
+    <button class="icon-button" aria-label="Zoom in" data-tooltip="Zoom in" onclick={() => controls?.zoom(1.25)}><Plus size={15} /></button>
+    <button class="icon-button fit-graph" aria-label="Fit graph" data-tooltip="Fit graph" onclick={fit}><Focus size={15} strokeWidth={1.55} /></button>
   </div>
 </section>
 
