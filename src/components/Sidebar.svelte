@@ -1,6 +1,6 @@
 <script lang="ts">
   import { SvelteSet } from 'svelte/reactivity'
-  import { ChevronRight, FileText, Folder, FolderOpen, House, ListChecks, Plus, Settings2, Waypoints } from '@lucide/svelte'
+  import { ChevronRight, FileText, Folder, FolderOpen, House, Inbox, ListChecks, Plus, Settings2, Waypoints } from '@lucide/svelte'
   import { noteName, type Note } from '../lib/notes.ts'
   import { hoverExcerpt } from '../lib/markdown.ts'
   import type { Workspace } from '../lib/workspace.svelte.ts'
@@ -15,6 +15,7 @@
   const folder = (path: string, name: string): FolderNode => ({ path, name, folders: new Map(), files: [] })
   const destinations = [
     { id: 'home', label: 'Home', icon: House },
+    { id: 'inbox', label: 'Inbox', icon: Inbox },
     { id: 'graph', label: 'Graph', icon: Waypoints },
     { id: 'tasks', label: 'Tasks', icon: ListChecks },
   ] as const
@@ -80,7 +81,7 @@
 <aside class="sidebar" id="workspace-sidebar" aria-label="Workspace sidebar">
   <nav class="sidebar-nav" aria-label="Workspace">
     {#each destinations as destination (destination.id)}
-      <button type="button" class="side-row" class:selected={workspace.page === destination.id} aria-current={workspace.page === destination.id ? 'page' : undefined} onclick={() => workspace.show(destination.id)}><destination.icon size={17} strokeWidth={1.65} /><span>{destination.label}</span></button>
+      <button type="button" class="side-row" class:selected={workspace.page === destination.id} aria-current={workspace.page === destination.id ? 'page' : undefined} onclick={() => { workspace.show(destination.id); if (destination.id === 'inbox') void workspace.refreshInbox() }}><destination.icon size={17} strokeWidth={1.65} /><span>{destination.label}</span>{#if destination.id === 'inbox' && workspace.inbox.length}<span class="sidebar-count" aria-label={`${workspace.inbox.length} notes`}>{workspace.inbox.length}</span>{/if}</button>
     {/each}
   </nav>
   <div class="side-section">

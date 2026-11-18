@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify'
 import { Marked, type Tokens } from 'marked'
 import { splitNote } from './notes.ts'
+import { colorMarkup, colorSpecs, isColorTag, readColorSpan } from './color-markdown.ts'
 
 export const wikiPattern = /^\[\[([^\[\]\n|]+)(?:\|([^\]\n]+))?\]\]/
 const underlineTag = /^<\/?u>$/i
@@ -13,7 +14,7 @@ function escapeHtml(text: string) {
 const markdown = new Marked({ gfm: true, async: false })
 markdown.use({
   renderer: {
-    html: ({ text }: Tokens.HTML | Tokens.Tag) => underlineTag.test(text) ? text : escapeHtml(text),
+    html: ({ text }: Tokens.HTML | Tokens.Tag) => underlineTag.test(text) || isColorTag(text) ? text : escapeHtml(text),
   },
   extensions: [{
     name: 'wikiLink',
@@ -26,12 +27,24 @@ markdown.use({
     renderer(token) {
       return `<a href="#" data-wiki="${escapeHtml(token.target)}">${escapeHtml(token.label)}</a>`
     },
-  }],
+  }, ...colorSpecs.map((spec) => ({
+    name: spec.name,
+    level: 'inline' as const,
+    start: (source: string) => source.indexOf(`<${spec.tag} ${spec.attr}=`),
+    tokenizer(this: import('marked').TokenizerThis, source: string) {
+      const span = readColorSpan(spec, source)
+      if (span) return { type: spec.name, raw: span.raw, color: span.color, tokens: this.lexer.inlineTokens(span.inner) }
+    },
+    renderer(this: import('marked').RendererThis, token: Tokens.Generic) {
+      return colorMarkup(spec, token.color, this.parser.parseInline(token.tokens ?? []))
+    },
+    childTokens: ['tokens'],
+  }))],
 })
 
 const surfaces = {
-  ALLOWED_TAGS: ['a', 'blockquote', 'br', 'code', 'del', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'input', 'li', 'ol', 'p', 'pre', 'strong', 'table', 'tbody', 'td', 'th', 'thead', 'tr', 'u', 'ul'],
-  ALLOWED_ATTR: ['align', 'alt', 'checked', 'class', 'data-wiki', 'disabled', 'href', 'src', 'start', 'title', 'type'],
+  ALLOWED_TAGS: ['a', 'blockquote', 'br', 'code', 'del', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'input', 'li', 'mark', 'ol', 'p', 'pre', 'span', 'strong', 'table', 'tbody', 'td', 'th', 'thead', 'tr', 'u', 'ul'],
+  ALLOWED_ATTR: ['align', 'alt', 'checked', 'class', 'data-folio-color', 'data-folio-highlight', 'data-wiki', 'disabled', 'href', 'src', 'start', 'title', 'type'],
   ALLOW_DATA_ATTR: false,
 }
 

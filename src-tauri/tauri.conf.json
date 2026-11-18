@@ -22,6 +22,21 @@
         "hiddenTitle": true,
         "trafficLightPosition": { "x": 17, "y": 24 },
         "backgroundColor": "#202020"
+      },
+      {
+        "label": "capture",
+        "title": "Quick Capture",
+        "width": 522,
+        "height": 282,
+        "visible": false,
+        "focus": false,
+        "center": true,
+        "decorations": false,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "visibleOnAllWorkspaces": true,
+        "skipTaskbar": true,
+        "backgroundColor": "#252525"
       }
     ],
     "security": {

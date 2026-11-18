@@ -3,7 +3,7 @@ use std::{
     fs,
     io::{self, Read, Write},
     path::{Component, Path, PathBuf},
-    sync::Mutex,
+    sync::{Mutex, MutexGuard},
     time::UNIX_EPOCH,
 };
 use tauri::{AppHandle, Manager, State};
@@ -11,6 +11,7 @@ use tauri_plugin_dialog::DialogExt;
 use walkdir::WalkDir;
 
 const MAX_NOTE_BYTES: u64 = 4 * 1024 * 1024;
+pub mod inbox;
 const SAMPLE: &[(&str, &str)] = &[
     ("Start here.md", include_str!("../../sample/Start here.md")),
     ("Scratchpad.md", include_str!("../../sample/Scratchpad.md")),
@@ -37,6 +38,7 @@ pub struct Store {
     sample: PathBuf,
     root: Mutex<PathBuf>,
     writes: Mutex<()>,
+    undo_inbox: Mutex<Option<inbox::Receipt>>,
 }
 
 #[derive(Serialize)]
@@ -77,6 +79,7 @@ impl Store {
             root: Mutex::new(root),
             sample,
             writes: Mutex::new(()),
+            undo_inbox: Mutex::new(None),
         })
     }
 
@@ -93,11 +96,15 @@ impl Store {
     }
 
     fn active_root(&self, key: &str) -> Result<PathBuf, String> {
+        Ok(self.lock_root(key)?.clone())
+    }
+
+    fn lock_root(&self, key: &str) -> Result<MutexGuard<'_, PathBuf>, String> {
         let root = self.root.lock().map_err(|_| "Workspace is unavailable.")?;
         if root.to_str() != Some(key) {
             return Err("The selected workspace changed.".into());
         }
-        Ok(root.clone())
+        Ok(root)
     }
 }
 

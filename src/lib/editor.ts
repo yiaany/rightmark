@@ -11,6 +11,8 @@ import { wikiPattern, visualBlockReason, visualInputBlockReason } from './markdo
 import { splitNote } from './notes.ts'
 import { smoothCaret } from './smooth-caret.ts'
 import { blockDrag } from './block-drag.ts'
+import { colorMarks } from './editor-color-marks.ts'
+import { editorSearch } from './editor-search.ts'
 
 const WikiLink = Node.create({
   name: 'wikiLink',
@@ -48,6 +50,7 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
         link: { openOnClick: false, enableClickSelection: false },
       }),
       Markdown,
+      ...colorMarks,
       WikiLink,
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -57,6 +60,7 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
       smartInputRules,
       smoothCaret,
       blockDrag,
+      editorSearch,
     ],
     enablePasteRules: false,
     enableInputRules: inputRules,

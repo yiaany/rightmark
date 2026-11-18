@@ -1,45 +1,16 @@
 <script lang="ts">
   import { flip } from 'svelte/animate'
-  import { CodeXml, Eye, House, Monitor, Moon, PanelLeft, Plus, Search, SquareSplitHorizontal, Sun, X } from '@lucide/svelte'
-  import { onMount, tick } from 'svelte'
-  import ThemeOptions from './ThemeOptions.svelte'
+  import { CodeXml, Eye, House, PanelLeft, Plus, Search, SquarePen, SquareSplitHorizontal, X } from '@lucide/svelte'
+  import ThemeSwitch from './ThemeSwitch.svelte'
   import { noteName } from '../lib/notes.ts'
-  import type { Theme } from '../lib/appearance.ts'
   import { native } from '../lib/storage.ts'
   import type { Mode, Workspace } from '../lib/workspace.svelte.ts'
 
-  let { workspace, sidebar, toggleSidebar, search, theme, onTheme }: {
-    workspace: Workspace; sidebar: boolean; toggleSidebar: (animate: boolean) => void; search: () => void; theme: Theme; onTheme: (theme: Theme) => void
+  let { workspace, sidebar, toggleSidebar, search, capture, captureKey, appliedTheme, onTheme }: {
+    workspace: Workspace; sidebar: boolean; toggleSidebar: (animate: boolean) => void; search: () => void; capture: () => void; captureKey: string; appliedTheme: 'light' | 'dark'; onTheme: (theme: 'light' | 'dark') => void
   } = $props()
   let dragged = $state('')
-  let appearance = $state(false)
-  let picker: HTMLDivElement
-  let themeButton: HTMLButtonElement
-  let ThemeIcon = $derived(theme === 'system' ? Monitor : theme === 'light' ? Sun : Moon)
   const modes = [{ id: 'editor', label: 'Editor', icon: CodeXml }, { id: 'split', label: 'Split', icon: SquareSplitHorizontal }, { id: 'preview', label: 'Preview', icon: Eye }] as const
-
-  onMount(() => {
-    const dismiss = (event: PointerEvent) => { if (event.target instanceof Node && !picker.contains(event.target)) appearance = false }
-    window.addEventListener('pointerdown', dismiss)
-    const escape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || !appearance) return
-      appearance = false
-      if (picker.contains(document.activeElement)) themeButton.focus()
-    }
-    window.addEventListener('keydown', escape)
-    return () => { window.removeEventListener('pointerdown', dismiss); window.removeEventListener('keydown', escape) }
-  })
-
-  function toggleAppearance(event: MouseEvent) {
-    appearance = !appearance
-    if (appearance && event.detail === 0) void tick().then(() => picker.querySelector<HTMLButtonElement>('.theme-options [aria-pressed=true]')?.focus())
-  }
-
-  function pick(next: Theme) {
-    onTheme(next)
-    appearance = false
-    themeButton.focus()
-  }
 
   function changeMode(mode: Mode) {
     if (!workspace.active) return
@@ -92,10 +63,8 @@
         {/each}
       </div>
     {/if}
+    <button type="button" class="icon-button" aria-label="Quick Capture" data-tooltip="Quick Capture" data-tooltip-key={captureKey} onclick={capture}><SquarePen size={16} strokeWidth={1.6} /></button>
     <button type="button" class="icon-button top-search" aria-label="Quick search" data-tooltip="Quick search" data-tooltip-key="⌘K" onclick={search}><Search size={16} strokeWidth={1.6} /></button>
-    <div class="appearance-picker" bind:this={picker}>
-      <button type="button" class="icon-button" bind:this={themeButton} aria-label="Choose theme" aria-expanded={appearance} aria-controls={appearance ? 'titlebar-appearance' : undefined} data-tooltip={!appearance ? 'Choose theme' : undefined} onclick={toggleAppearance}><ThemeIcon size={16} strokeWidth={1.6} /></button>
-      {#if appearance}<div class="appearance-menu" id="titlebar-appearance"><ThemeOptions {theme} onChange={pick} compact /></div>{/if}
-    </div>
+    <ThemeSwitch dark={appliedTheme === 'dark'} change={onTheme} />
   </div>
 </header>

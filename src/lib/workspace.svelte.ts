@@ -1,9 +1,10 @@
 import { SvelteMap } from 'svelte/reactivity'
-import { moveTab, noteName, resolveNote, scanTasks, toggleTask, type Note, type Task } from './notes.ts'
+import { moveTab, noteName, resolveNote, scanTasks, toggleTask, type Note, type SearchMatch, type Task } from './notes.ts'
 import { getStorage, type Storage, type WorkspaceInfo } from './storage.ts'
+import type { InboxAction, InboxNote } from './inbox.ts'
 
 export type Mode = 'editor' | 'split' | 'preview'
-export type Page = 'home' | 'tasks' | 'note' | 'graph' | 'settings'
+export type Page = 'home' | 'inbox' | 'tasks' | 'note' | 'graph' | 'settings'
 
 export class DocumentSession {
   text = $state('')
@@ -13,6 +14,7 @@ export class DocumentSession {
   scrollTop = 0
   richState?: unknown
   sourceState?: unknown
+  searchHit = $state.raw<{ match: SearchMatch }>()
   syncView?: () => void
   timer?: ReturnType<typeof setTimeout>
   saving?: Promise<boolean>
@@ -27,6 +29,9 @@ export class Workspace {
   notes = $state.raw<Note[]>([])
   tabs = $state.raw<string[]>([])
   recent = $state.raw<string[]>([])
+  inbox = $state.raw<InboxNote[]>([])
+  inboxProblem = $state('')
+  canUndoInbox = $state(false)
   tasksByFile = new SvelteMap<string, Task[]>()
   index = new Map<string, string>()
   indexVersion = $state(0)
@@ -40,6 +45,9 @@ export class Workspace {
   private storage?: Storage
   private generation = 0
   private navigation = 0
+  private refreshInboxVersion = 0
+  private fileEpoch = 0
+  private fileRefresh = Promise.resolve()
   private loads = new Map<string, Promise<string>>()
   private unreadable = new Set<string>()
 
@@ -68,6 +76,9 @@ export class Workspace {
     this.unreadable.clear()
     this.notes = []
     this.recent = []
+    this.inbox = []
+    this.inboxProblem = ''
+    this.canUndoInbox = false
     this.indexVersion++
     if (!this.storage) return
     const notes = await this.storage.list(info.key)
@@ -75,6 +86,100 @@ export class Workspace {
     this.notes = notes.sort((a, b) => noteName(a.path).localeCompare(noteName(b.path), 'en', { numeric: true }))
     this.recent = this.readRecent(notes, info.sample)
     void this.populateIndex(generation, this.recent.concat(notes.map(({ path }) => path)))
+    await this.refreshInbox()
+  }
+
+  async refreshInbox() {
+    const key = this.info?.key, storage = this.storage
+    if (!key || !storage) return
+    const version = ++this.refreshInboxVersion
+    try {
+      const notes = await storage.listInbox(key)
+      if (key !== this.info?.key || version !== this.refreshInboxVersion) return
+      this.inbox = notes.sort((a, b) => b.modifiedAt - a.modifiedAt || a.path.localeCompare(b.path))
+      this.inboxProblem = ''
+    } catch (error) { if (key === this.info?.key && version === this.refreshInboxVersion) this.inboxProblem = String(error) }
+  }
+
+  private refreshFiles(changed?: string) {
+    const generation = this.generation
+    const request = this.fileRefresh.then(async () => {
+      if (generation === this.generation) await this.reloadFiles(changed)
+    })
+    this.fileRefresh = request.catch(() => {})
+    return request
+  }
+
+  private async reloadFiles(changed?: string) {
+    const key = this.info?.key, storage = this.storage, generation = this.generation
+    if (!key || !storage) return
+    const notes = await storage.list(key)
+    if (this.generation !== generation) return
+    this.fileEpoch++
+    const next = new Set(notes.map(({ path }) => path))
+    for (const { path } of this.notes) {
+      if (next.has(path)) continue
+      const session = this.sessions.get(path)
+      if (!session || session.saved === session.text) {
+        this.sessions.delete(path)
+        this.tabs = this.tabs.filter((tab) => tab !== path)
+        if (this.activePath === path) { this.activePath = ''; if (this.page === 'note') this.show('inbox') }
+      }
+      this.index.delete(path)
+      this.tasksByFile.delete(path)
+      this.unreadable.delete(path)
+    }
+    this.recent = this.recent.filter((path) => next.has(path))
+    this.notes = notes.sort((a, b) => noteName(a.path).localeCompare(noteName(b.path), 'en', { numeric: true }))
+    if (changed && next.has(changed)) {
+      const previous = this.sessions.get(changed)
+      const text = await storage.read(key, changed)
+      if (this.generation !== generation) return
+      if (previous && previous.saved === previous.text && this.sessions.get(changed) === previous) {
+        const replacement = new DocumentSession(changed, key, text)
+        replacement.mode = previous.mode
+        replacement.scrollTop = previous.scrollTop
+        this.sessions.set(changed, replacement)
+      }
+      this.indexText(changed, text)
+    }
+    this.indexVersion++
+    for (const { path } of notes) if (!this.index.has(path) && !this.unreadable.has(path)) void this.read(path).catch(() => {})
+  }
+
+  async captured() {
+    try { await Promise.all([this.refreshFiles(), this.refreshInbox()]) }
+    catch (error) { this.error = String(error) }
+  }
+
+  async readInbox(note: InboxNote) {
+    if (!this.storage || !this.info) throw new Error('The Inbox is unavailable.')
+    return this.storage.readInbox(this.info.key, note)
+  }
+
+  async processInbox(note: InboxNote, expected: string, action: InboxAction) {
+    const key = this.info?.key, storage = this.storage
+    if (!key || !storage || this.busy) throw new Error('The workspace is unavailable.')
+    if (!(await this.flush())) throw new Error('Save your changes before processing Inbox.')
+    const changed = await storage.processInbox(key, note, expected, action)
+    if (key !== this.info?.key) return
+    this.canUndoInbox = true
+    await this.updateInbox(changed)
+  }
+
+  async undoInbox() {
+    const key = this.info?.key, storage = this.storage
+    if (!key || !storage || this.busy) return
+    if (!(await this.flush())) throw new Error('Save your changes before undoing.')
+    const changed = await storage.undoInbox(key)
+    if (key !== this.info?.key) return
+    this.canUndoInbox = false
+    await this.updateInbox(changed)
+  }
+
+  private async updateInbox(changed: string) {
+    try { await Promise.all([this.refreshFiles(changed), this.refreshInbox()]) }
+    catch (error) { this.error = `The Inbox changed, but the file list could not refresh: ${String(error)}` }
   }
 
   private readRecent(notes: Note[], sample: boolean) {
@@ -126,8 +231,9 @@ export class Workspace {
     const running = this.loads.get(path)
     if (running) return running
     const generation = this.generation
+    const epoch = this.fileEpoch
     const request = storage.read(key, path).then((text) => {
-      if (generation === this.generation) this.indexText(path, text)
+      if (generation === this.generation && (epoch === this.fileEpoch || this.notes.some((note) => note.path === path))) this.indexText(path, text)
       return text
     }).catch((error: unknown) => {
       if (generation === this.generation) this.unreadable.add(path)
@@ -148,7 +254,7 @@ export class Workspace {
     this.indexVersion++
   }
 
-  async open(path: string, focus = true) {
+  async open(path: string, focus = true, match?: SearchMatch) {
     const key = this.info?.key
     if (!key) return
     const navigation = focus ? ++this.navigation : this.navigation
@@ -161,6 +267,8 @@ export class Workspace {
       if (!this.tabs.includes(path)) this.tabs = [...this.tabs, path]
       if (!focus || navigation !== this.navigation) return
       this.active?.syncView?.()
+      const target = this.sessions.get(path)
+      if (target) target.searchHit = match ? { match } : undefined
       this.activePath = path
       this.page = 'note'
       this.error = ''

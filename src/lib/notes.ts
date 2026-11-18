@@ -62,20 +62,45 @@ export function resolveNote(target: string, from: string, notes: Note[]): string
   return matches.length === 1 ? matches[0].path : undefined
 }
 
-export function searchNotes(notes: Note[], textFor: (path: string) => string | undefined, query: string) {
-  const value = query.trim().toLocaleLowerCase()
-  if (!value) return notes.slice(0, 30).map((note) => ({ ...note, excerpt: '' }))
+export type SearchMatch = { from: number; to: number; text: string }
+type SearchExcerpt = { before: string; match: string; after: string }
+export type SearchResult = Note & { rank: number; excerpt?: SearchExcerpt; match?: SearchMatch }
+
+function literal(value: string) { return new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu') }
+
+export function findText(text: string, value: string, start = 0): SearchMatch | undefined {
+  if (!value) return
+  const hit = literal(value).exec(text.slice(start))
+  if (hit) return { from: start + hit.index, to: start + hit.index + hit[0].length, text: hit[0] }
+}
+
+export function sourcePosition(text: string, offset: number) {
+  const before = text.slice(0, offset)
+  return { lineNumber: before.split(/\r\n?|\n/).length, column: offset - Math.max(before.lastIndexOf('\n'), before.lastIndexOf('\r')) }
+}
+
+export function searchNotes(notes: Note[], textFor: (path: string) => string | undefined, query: string): SearchResult[] {
+  const value = query.trim()
+  if (!value) return notes.map((note) => ({ ...note, rank: 0 }))
+  const pattern = literal(value)
   return notes.flatMap((note) => {
-    const title = noteName(note.path).toLocaleLowerCase()
+    const title = noteName(note.path)
     const body = textFor(note.path) ?? ''
-    const offset = body.toLocaleLowerCase().indexOf(value)
-    const rank = title.startsWith(value) ? 0 : title.includes(value) ? 1 : note.path.toLocaleLowerCase().includes(value) ? 2 : 3
-    if (offset < 0 && rank === 3) return []
-    const start = Math.max(0, offset - 24, body.lastIndexOf('\n', offset) + 1)
-    const end = body.indexOf('\n', offset)
-    const excerpt = offset < 0 ? '' : body.slice(start, Math.min(offset + 72, end < 0 ? body.length : end)).trim()
-    return [{ ...note, rank, excerpt }]
-  }).sort((a, b) => a.rank - b.rank).slice(0, 30)
+    const titleHit = title.search(pattern)
+    const rank = titleHit === 0 ? 0 : titleHit > 0 ? 1 : pattern.test(note.path) ? 2 : 3
+    const hit = pattern.exec(body)
+    if (!hit) return rank === 3 ? [] : [{ ...note, rank }]
+    const from = hit.index, to = from + hit[0].length
+    const lineStart = body.lastIndexOf('\n', from - 1) + 1
+    const lineEnd = body.indexOf('\n', to)
+    const end = lineEnd < 0 ? body.length : lineEnd
+    const start = Math.max(lineStart, from - 46), stop = Math.min(end, to + 52)
+    return [{ ...note, rank, match: { from, to, text: hit[0] }, excerpt: {
+      before: (start > lineStart ? '…' : '') + body.slice(start, from).trimStart(),
+      match: hit[0],
+      after: body.slice(to, stop).trimEnd() + (stop < end ? '…' : ''),
+    } }]
+  }).sort((a, b) => a.rank - b.rank)
 }
 
 export function moveTab(paths: string[], from: string, to: string) {

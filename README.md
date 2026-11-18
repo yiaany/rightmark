@@ -4,7 +4,11 @@ Folio is a small local Markdown workspace for macOS. Open a folder, switch betwe
 
 In Preview, type `/` on an empty line to insert headings, lists, tables, quotes, code, or dividers. Tables stay in the Markdown file. Open **Graph** from the sidebar or with `⌘⇧G` to browse the folder's internal links, or choose **Local** after opening a note. Change appearance in **Settings** (`⌘,`) or from the title bar.
 
-Select text in Preview for inline formatting and links. Hover beside a paragraph or list item and drag its handle to reorder it among siblings. `Option–Shift–↑ / ↓` moves the current block without a mouse.
+Select text in Preview for inline formatting, links, text color, and highlights. The two annotations are independent and stored in Markdown as inline `<span data-folio-color="…">` and `<mark data-folio-highlight="…">` with palette keys. Hover beside a paragraph or list item and drag its handle to reorder it among siblings. `Option–Shift–↑ / ↓` moves the current block without a mouse.
+
+Press `Control–Shift–N` from any Mac app while Folio is running, or choose **Quick Capture** in the menu bar. `Command–Return` saves to `Inbox/`; `Escape` hides the window without deleting the draft. The shortcut can be changed in Settings. From Inbox, keep a capture as a note, add it to an existing note, make it a task, or archive it. Undo restores the last processed item if the destination has not changed. Captures saved before choosing a folder are kept in the local Inbox and remain visible after switching to a personal folder.
+
+Use `Command–K` to search filenames, folders, and note text. An excerpt highlights the first match, and opening it jumps to that text in the document. Matches only visible in raw Markdown open in Editor mode.
 
 ## Development
 

@@ -3,6 +3,7 @@ name: Folio
 description: A quiet macOS workspace for local Markdown files.
 colors:
   canvas: '#1a1a1a'
+  document-canvas: '#171717'
   chrome: '#202020'
   light-chrome: '#f5f4f1'
   surface: '#252525'
@@ -18,6 +19,8 @@ colors:
   preview-minimize: '#ffbd2e'
   preview-zoom: '#28c840'
   command-checkbox: '#2b6de8'
+  yellow-marker-dark: '#504a21'
+  yellow-marker-light: '#f3e6ab'
 typography:
   menu-label:
     fontSize: '10px'
@@ -81,7 +84,7 @@ The window follows Markpad's compact desktop proportions. The workspace has two 
 
 ## Colors
 
-In Dark, the title bar and sidebar share `#202020` and the canvas is `#1a1a1a`, including the editor and graph. Use pure white for the primary Home action. In Light, the shared chrome is `#f5f4f1` against a white canvas. Menus, view selections, and file selections use neutral fills. Light and System are available from the title bar and Settings. Monaco and the graph read the same CSS palette as the rest of the app.
+In Dark, the title bar and sidebar share `#202020`. The document canvas is `#171717` in visual editing, Markdown, and Split; Home and Graph retain `#1a1a1a`. Use pure white for the primary Home action. In Light, the shared chrome is `#f5f4f1` against a white canvas. Menus, view selections, and file selections use neutral fills.
 
 ## Layout
 
@@ -102,6 +105,16 @@ The title bar is 44 px high and the sidebar is 248 px wide at the default macOS 
 **Slash menu:** A dark canvas-colored picker (white in Light) sits beside the slash. Use a thin border, 14 px corners, 34 px rows, and subtle rules between Text, List, and Blocks. Text and headings show typographic previews; the blue checkbox glyph is the only colored icon. Selection uses a neutral fill. The menu opens instantly and scrolls independently.
 
 **Selection toolbar:** Put a compact, pill-shaped formatting bar above a text selection, or below when there is no room. Keep focus in the editor for pointer formatting; link editing can take focus. `Option–F10` enters the toolbar from a selection. A direct hover on the left gutter reveals the matching block handle without crossing the text first. Show an insertion line during the drag, with no animation lag behind the pointer.
+
+**Document toolbar:** Center the controls in a single compact group above the writing column. Direct controls cover common inline formats and lists; headings, quotes, strikethrough, and history are in the overflow. The block handle stays in the document gutter, to the left of list markers.
+
+**Quick Search:** Keep the input and keyboard hints visible while the results scroll independently. Show recent notes before typing, and the filename, folder, and highlighted excerpt for a match.
+
+**Quick Capture and Inbox:** The separate capture window opens immediately with a focused field and a visible save destination. Inbox pairs a chronological list with the contents and actions for the selected note. Never require a tagging or filing decision when capturing.
+
+**Annotation palette:** Text color and Highlight are independent. Both open a vertical list with named swatches and a check beside the active choice. Yellow highlight uses a muted olive-gold background in Dark and soft ochre in Light. Default clears only the current annotation.
+
+**Theme switch:** The title bar button directly toggles Light and Dark. On a pointer click the new theme reveals in a circle from the button; the sun and moon share one SVG silhouette. Keyboard, reduced motion, and unsupported webviews switch immediately. System stays available in Settings.
 
 **Caret:** Typed characters appear immediately. In the visual editor, a 65 ms glide applies only to short horizontal caret movement. Use the native caret for selection, IME, and reduced motion.
 

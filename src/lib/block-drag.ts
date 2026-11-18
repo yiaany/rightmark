@@ -3,7 +3,8 @@ import { Plugin } from '@tiptap/pm/state'
 import { blockAt, moveBlock, type MovableBlock } from './block-move.ts'
 
 const handleWidth = 23
-const gutterWidth = 36
+const gutterWidth = 40
+const markerGap = 9
 
 export const blockDrag = Extension.create({
   name: 'blockDrag',
@@ -65,7 +66,7 @@ export const blockDrag = Extension.create({
           const withinGutter = x >= editorRect.left - gutterWidth && x < editorRect.left && y >= editorRect.top && y <= editorRect.bottom
           if (!withinEditor && !withinGutter) { hideHandle(); return }
           // The empty gutter maps to the row at the same height, even on first entry.
-          const probe = withinGutter ? editorRect.left + Math.min(gutterWidth, editorRect.width / 2) : x
+          const probe = withinGutter ? editorRect.left + Math.min(72, editorRect.width / 2) : x
           const found = view.posAtCoords({ left: probe, top: y })
           const doc = view.state.doc
           const block = found && (blockAt(doc, found.pos) ?? (found.inside >= 0 ? blockAt(doc, found.inside + 1) : undefined))
@@ -75,7 +76,8 @@ export const blockDrag = Extension.create({
           const bounds = scroller.getBoundingClientRect()
           if (y < rect.top - 3 || y > rect.bottom + 3 || rect.top < bounds.top || rect.top + 22 > bounds.bottom) { hideHandle(); return }
           hovered = block
-          handle.style.transform = `translate3d(${Math.max(bounds.left + 2, rect.left - handleWidth)}px, ${rect.top + 1}px, 0)`
+          // Use the document edge, not the indented list item or its outside marker.
+          handle.style.transform = `translate3d(${Math.max(bounds.left + 2, editorRect.left - handleWidth - markerGap)}px, ${rect.top + 1}px, 0)`
           handle.hidden = false
         }
 

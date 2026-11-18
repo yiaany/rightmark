@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { moveTab, resolveNote, scanTasks, searchNotes, splitNote, toggleTask } from '../src/lib/notes.ts'
+import { findText, moveTab, resolveNote, scanTasks, searchNotes, sourcePosition, splitNote, toggleTask } from '../src/lib/notes.ts'
 
 test('toggling a checkbox preserves frontmatter, fences and CRLF', () => {
   const text = '---\r\ntitle: Tasks\r\n---\r\n```md\r\n- [ ] Example\r\n```\r\n> - [X] Review proof\r\n'
@@ -25,6 +25,21 @@ test('links prefer a sibling and never choose between ambiguous short names', ()
 test('search prioritizes titles over body matches', () => {
   const notes = ['Studio.md', 'Light and color.md'].map((path) => ({ path, modifiedAt: 0 }))
   assert.deepEqual(searchNotes(notes, () => 'Indirect light after four.', 'light').map(({ path }) => path), ['Light and color.md', 'Studio.md'])
+})
+
+test('search produces the exact excerpt and source range for Unicode and literal punctuation', () => {
+  const text = 'İntro 🌿\r\nTry [Идея] after lunch.'
+  const [result] = searchNotes([{ path: 'Scratch.md', modifiedAt: 0 }], () => text, '[идея]')
+  assert.deepEqual(result.excerpt, { before: 'Try ', match: '[Идея]', after: ' after lunch.' })
+  assert.equal(text.slice(result.match!.from, result.match!.to), '[Идея]')
+  assert.deepEqual(sourcePosition(text, result.match!.from), { lineNumber: 2, column: 5 })
+  assert.deepEqual(findText(text, '[идея]'), result.match)
+})
+
+test('search does not drop notes beyond the first page', () => {
+  const notes = Array.from({ length: 180 }, (_, index) => ({ path: `Note ${index}.md`, modifiedAt: 0 }))
+  assert.equal(searchNotes(notes, () => undefined, '').length, 180)
+  assert.equal(searchNotes(notes, () => 'Common phrase', 'phrase').length, 180)
 })
 
 test('reordering tabs does not duplicate or delete one', () => {

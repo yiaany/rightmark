@@ -19,7 +19,7 @@ function applyEditorTheme() {
       { token: 'strong', foreground: ink.slice(1), fontStyle: 'bold' },
     ],
     colors: {
-      'editor.background': token('canvas'), 'editor.foreground': token('body'), 'editorLineNumber.foreground': token('muted'),
+      'editor.background': token('document-canvas'), 'editor.foreground': token('body'), 'editorLineNumber.foreground': token('muted'),
       'editorLineNumber.activeForeground': ink, 'editor.lineHighlightBackground': token('surface'),
       'editor.selectionBackground': token('selection'), 'editorCursor.foreground': accent,
       'editorIndentGuide.background1': token('line'), 'editorWidget.background': token('surface'),

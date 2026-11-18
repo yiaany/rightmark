@@ -3,5 +3,5 @@
   "identifier": "main",
   "description": "Window controls and opening links in the system browser",
   "windows": ["main"],
-  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten", "core:window:allow-start-dragging", "core:window:allow-destroy", "core:window:allow-set-theme", "opener:allow-default-urls"]
+  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten", "core:window:allow-start-dragging", "core:window:allow-hide", "core:window:allow-set-theme", "opener:allow-default-urls"]
 }

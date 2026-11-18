@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, untrack } from 'svelte'
   import type { editor } from 'monaco-editor'
+  import { sourcePosition } from '../lib/notes.ts'
+  import { currentMatch } from '../lib/search-reveal.ts'
   import type { DocumentSession } from '../lib/workspace.svelte.ts'
 
   let { document, onChange, onScroll, connect }: {
@@ -11,6 +13,27 @@
   let host: HTMLDivElement
   let problem = $state(false)
   let ready = $state(false)
+  let source = $state.raw<editor.IStandaloneCodeEditor>()
+  let fallback = $state<HTMLTextAreaElement>()
+
+  $effect(() => {
+    const request = document.searchHit
+    if (!request || (!source && !fallback)) return
+    const text = untrack(() => document.text)
+    const match = currentMatch(text, request.match)
+    document.searchHit = undefined
+    if (!match) return
+    if (source) {
+      const start = sourcePosition(text, match.from), end = sourcePosition(text, match.to)
+      const range = { startLineNumber: start.lineNumber, startColumn: start.column, endLineNumber: end.lineNumber, endColumn: end.column }
+      source.setSelection(range)
+      source.revealRangeInCenter(range, 1)
+      source.focus()
+    } else if (fallback) {
+      fallback.focus()
+      fallback.setSelectionRange(match.from, match.to)
+    }
+  })
 
   onMount(() => {
     const session = document
@@ -20,6 +43,7 @@
     void import('../lib/monaco.ts').then(({ mountMonaco }) => {
       if (cancelled) return
       const { instance, destroy } = mountMonaco(host, session.text, session.sourceState as editor.ICodeEditorViewState | null, write)
+      source = instance
       let fromPreview = false
       connect((fraction) => {
         fromPreview = true
@@ -44,6 +68,6 @@
 </script>
 
 <div class="source-editor" bind:this={host}>
-  {#if problem}<textarea aria-label="Markdown source" spellcheck={false} autocorrect="off" autocapitalize="off" autocomplete="off" value={document.text} oninput={(event) => onChange(event.currentTarget.value)}></textarea>
+  {#if problem}<textarea bind:this={fallback} aria-label="Markdown source" spellcheck={false} autocorrect="off" autocapitalize="off" autocomplete="off" value={document.text} oninput={(event) => onChange(event.currentTarget.value)}></textarea>
   {:else if !ready}<p class="pane-message">Opening source…</p>{/if}
 </div>

@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte'
-  import type { Editor } from '@tiptap/core'
-  import { Bold, Check, Code, Italic, List, Plus } from '@lucide/svelte'
+  import { onMount, tick, untrack } from 'svelte'
+  import type { ChainedCommands, Editor } from '@tiptap/core'
+  import { Bold, CheckSquare, Code, Ellipsis, Heading2, Italic, List, ListOrdered, Plus, Quote, Redo2, Strikethrough, Underline, Undo2 } from '@lucide/svelte'
   import { blockCommands } from '../lib/block-commands.ts'
   import { followLink } from '../lib/links.ts'
   import { renderNote } from '../lib/markdown.ts'
+  import { currentMatch, visualMatch } from '../lib/search-reveal.ts'
+  import { splitNote } from '../lib/notes.ts'
   import type { DocumentSession } from '../lib/workspace.svelte.ts'
 
   let { document, onChange, onLink, onSource }: {
@@ -27,6 +29,46 @@
   let menu: HTMLDivElement | undefined = $state()
   let item = $state(0)
   let dismissedAt = -1
+  let overflow = $state(false)
+  let extra = $state<HTMLDivElement>()
+  let extraButton = $state<HTMLButtonElement>()
+  let searchKey: typeof import('../lib/editor-search.ts').searchDecoration | undefined
+  const formatGroups = [
+    [
+      { mark: 'bold', label: 'Bold', key: '⌘B', icon: Bold, run: (c: ChainedCommands) => c.toggleBold() },
+      { mark: 'italic', label: 'Italic', key: '⌘I', icon: Italic, run: (c: ChainedCommands) => c.toggleItalic() },
+      { mark: 'underline', label: 'Underline', key: '⌘U', icon: Underline, run: (c: ChainedCommands) => c.toggleUnderline() },
+      { mark: 'code', label: 'Inline code', key: '', icon: Code, run: (c: ChainedCommands) => c.toggleCode() },
+    ], [
+      { mark: 'bulletList', label: 'Bullet list', key: '', icon: List, run: (c: ChainedCommands) => c.toggleBulletList() },
+      { mark: 'orderedList', label: 'Numbered list', key: '', icon: ListOrdered, run: (c: ChainedCommands) => c.toggleOrderedList() },
+      { mark: 'taskList', label: 'Task list', key: '', icon: CheckSquare, run: (c: ChainedCommands) => c.toggleTaskList() },
+    ],
+  ]
+  const extras = [
+    { label: 'Heading', icon: Heading2, run: (c: ChainedCommands) => c.toggleHeading({ level: 2 }) },
+    { label: 'Block quote', icon: Quote, run: (c: ChainedCommands) => c.toggleBlockquote() },
+    { label: 'Strikethrough', icon: Strikethrough, run: (c: ChainedCommands) => c.toggleStrike() },
+    { label: 'Undo', icon: Undo2, run: (c: ChainedCommands) => c.undo() },
+    { label: 'Redo', icon: Redo2, run: (c: ChainedCommands) => c.redo() },
+  ]
+
+  $effect(() => {
+    const request = document.searchHit
+    if (!ready || !instance || !request || !searchKey) return
+    const editor = instance, key = searchKey
+    untrack(() => {
+      const match = currentMatch(document.text, request.match)
+      if (!match) { document.searchHit = undefined; return }
+      const visible = !reason && match.from >= splitNote(document.text).frontmatter.length && visualMatch(editor.state.doc, match.text)
+      if (!visible) { onSource(); return }
+      document.searchHit = undefined
+      editor.view.dispatch(editor.state.tr.setMeta(key, visible))
+      const coords = editor.view.coordsAtPos(visible.from)
+      const bounds = scroller.getBoundingClientRect()
+      scroller.scrollTop += coords.top - bounds.top - bounds.height * .4
+    })
+  })
   let matches = $derived(blockCommands.filter(({ label, terms }) => `${label} ${terms}`.toLowerCase().includes(slash?.value ?? '')))
   let groups = $derived.by(() => {
     const result = new Map<string, { block: (typeof blockCommands)[number]; index: number }[]>()
@@ -49,7 +91,7 @@
   function selectionChanged() {
     const editor = instance
     if (!editor) return
-    marks = ['bold', 'italic', 'code', 'taskList', 'table'].filter((mark) => editor.isActive(mark)).join(' ')
+    marks = [...formatGroups.flat().map(({ mark }) => mark), 'table'].filter((mark) => editor.isActive(mark)).join(' ')
     updateFormatting(editor)
     const { empty, from, $from: position } = editor.state.selection
     if (!empty || editor.view.composing || editor.isActive('codeBlock') || editor.isActive('table')) { slash = undefined; return }
@@ -93,6 +135,7 @@
   }
 
   function pointerDown(event: PointerEvent) {
+    if (overflow && event.target instanceof Node && !extra?.contains(event.target)) overflow = false
     if (!(event.target instanceof Node) || toolbar?.contains(event.target)) return
     if (host?.contains(event.target) && event.button === 0) {
       pointerSelecting = true
@@ -163,8 +206,9 @@
     let cancelled = false
     let flush: (() => void) | undefined
     let onKey: ((event: KeyboardEvent) => void) | undefined
-    void Promise.all([import('../lib/editor.ts'), import('./SelectionToolbar.svelte')]).then(([{ createVisualEditor }, toolbarModule]) => {
+    void Promise.all([import('../lib/editor.ts'), import('./SelectionToolbar.svelte'), import('../lib/editor-search.ts')]).then(([{ createVisualEditor }, toolbarModule, searchModule]) => {
       if (cancelled) return
+      searchKey = searchModule.searchDecoration
       SelectionToolbar = toolbarModule.default
       const visual = createVisualEditor(host, session.text, write, selectionChanged)
       instance = visual.editor
@@ -179,6 +223,7 @@
       onKey = handleSlashKeys
       host.addEventListener('keydown', onKey, true)
       if (!session.text) instance.commands.focus('start')
+      selectionChanged()
     }).catch((error: unknown) => {
       if (!cancelled) { reason = 'Visual editing could not open this file.'; ready = true; console.error(error) }
     })
@@ -204,27 +249,43 @@
   }
 </script>
 
-<svelte:window onpointerdown={pointerDown} onpointerup={pointerUp} onpointercancel={pointerUp} onfocusin={focusChanged} onresize={() => {
+<svelte:window onpointerdown={pointerDown} onpointerup={pointerUp} onpointercancel={pointerUp} onfocusin={focusChanged} onkeydown={(event) => {
+  if (overflow && event.key === 'Escape') { overflow = false; extraButton?.focus() }
+}} onresize={() => {
   if (slash && instance) slash = { ...slash, ...menuPosition(instance, slash.from) }
   if (formatting) updateFormatting()
 }} />
 <div class="rich-pane" bind:this={scroller} onscroll={scrollEditor}>
   <div class="document-column">
     {#if ready && !reason}
-      <div class="format-toolbar" role="group" aria-label="Formatting">
-        <button type="button" class="icon-button" aria-label="Bold" data-tooltip="Bold" data-tooltip-key="⌘B" aria-pressed={marks.includes('bold')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleBold().run()}><Bold size={16} /></button>
-        <button type="button" class="icon-button" aria-label="Italic" data-tooltip="Italic" data-tooltip-key="⌘I" aria-pressed={marks.includes('italic')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleItalic().run()}><Italic size={16} /></button>
-        <button type="button" class="icon-button" aria-label="Inline code" data-tooltip="Inline code" aria-pressed={marks.includes('code')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleCode().run()}><Code size={16} /></button>
-        <span class="toolbar-divider"></span>
-        <button type="button" class="icon-button" aria-label="Bullet list" data-tooltip="Bullet list" onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleBulletList().run()}><List size={16} /></button>
-        <button type="button" class="icon-button" aria-label="Task list" data-tooltip="Task list" aria-pressed={marks.includes('taskList')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleTaskList().run()}><Check size={16} /></button>
+      <div class="format-toolbar" role="group" aria-label="Document formatting">
+        {#each formatGroups as group, index (index)}
+          {#if index}<span class="toolbar-divider" aria-hidden="true"></span>{/if}
+          <div class="format-group">
+            {#each group as action (action.mark)}
+              <button type="button" class="icon-button" aria-label={action.label} data-tooltip={action.label} data-tooltip-key={action.key || undefined} aria-pressed={marks.split(' ').includes(action.mark)} onmousedown={buttonDown} onclick={() => { if (instance) action.run(instance.chain().focus()).run() }}><action.icon size={15} strokeWidth={1.7} /></button>
+            {/each}
+          </div>
+        {/each}
+        <span class="toolbar-divider" aria-hidden="true"></span>
+        <div class="format-extra" bind:this={extra}>
+          <button type="button" class="icon-button" bind:this={extraButton} aria-label="More document formatting" data-tooltip={overflow ? undefined : 'More formatting'} aria-expanded={overflow} onmousedown={buttonDown} onclick={async (event) => {
+            overflow = !overflow
+            if (overflow && event.detail === 0) { await tick(); extra?.querySelector<HTMLButtonElement>('.format-menu button')?.focus() }
+          }}><Ellipsis size={16} /></button>
+          {#if overflow}<div class="format-menu" role="group" aria-label="More formatting">
+            {#each extras as action (action.label)}
+              <button type="button" onmousedown={buttonDown} onclick={() => { overflow = false; if (instance) action.run(instance.chain().focus()).run() }}><action.icon size={15} strokeWidth={1.65} />{action.label}</button>
+            {/each}
+          </div>{/if}
+        </div>
+      </div>
         {#if marks.includes('table')}
           <div class="table-tools">
             <button type="button" onmousedown={buttonDown} onclick={() => instance?.chain().focus().addRowAfter().run()}><Plus size={12} /> Row</button>
             <button type="button" onmousedown={buttonDown} onclick={() => instance?.chain().focus().addColumnAfter().run()}><Plus size={12} /> Column</button>
           </div>
         {/if}
-      </div>
     {/if}
     {#if !ready}<p class="pane-message">Opening note…</p>{/if}
     {#if reason}
