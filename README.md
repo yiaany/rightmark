@@ -2,7 +2,7 @@
 
 Folio is a small local Markdown workspace for macOS. Open a folder, switch between visual editing and source, and keep track of Markdown checkboxes without moving them into a database.
 
-In Preview, type `/` on an empty line to insert headings, lists, tables, quotes, code, or dividers. Tables stay in the Markdown file. Open **Graph** from the title bar or with `⌘⇧G` to browse the folder's internal links, or choose **Local** after opening a note.
+In Preview, type `/` on an empty line to insert headings, lists, tables, quotes, code, or dividers. Tables stay in the Markdown file. Open **Graph** from the sidebar or with `⌘⇧G` to browse the folder's internal links, or choose **Local** after opening a note. Change appearance in **Settings** (`⌘,`) or from the title bar.
 
 ## Development
 

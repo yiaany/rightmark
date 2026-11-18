@@ -6,23 +6,31 @@ import type { editor } from 'monaco-editor'
 
 Object.assign(globalThis, { MonacoEnvironment: { getWorker: () => new Worker() } })
 
-monaco.editor.defineTheme('folio', {
-  base: 'vs-dark', inherit: true,
-  rules: [
-    { token: 'keyword', foreground: 'D9C4A9' },
-    { token: 'string.link', foreground: 'C7B6A0' },
-    { token: 'strong', foreground: 'EEEAE4', fontStyle: 'bold' },
-  ],
-  colors: {
-    'editor.background': '#181818', 'editor.foreground': '#D4D0CA', 'editorLineNumber.foreground': '#8A837C',
-    'editorLineNumber.activeForeground': '#C2B9AE', 'editor.lineHighlightBackground': '#242220',
-    'editor.selectionBackground': '#55493B', 'editorCursor.foreground': '#D9C4A9',
-    'editorIndentGuide.background1': '#34302D',
-  },
-})
+function applyEditorTheme() {
+  const root = document.documentElement
+  const styles = getComputedStyle(root)
+  const token = (name: string) => styles.getPropertyValue(`--${name}`).trim()
+  const ink = token('ink'), accent = token('accent')
+  monaco.editor.defineTheme('folio', {
+    base: root.dataset.theme === 'light' ? 'vs' : 'vs-dark', inherit: true,
+    rules: [
+      { token: 'keyword', foreground: ink.slice(1), fontStyle: 'bold' },
+      { token: 'string.link', foreground: accent.slice(1) },
+      { token: 'strong', foreground: ink.slice(1), fontStyle: 'bold' },
+    ],
+    colors: {
+      'editor.background': token('canvas'), 'editor.foreground': token('body'), 'editorLineNumber.foreground': token('muted'),
+      'editorLineNumber.activeForeground': ink, 'editor.lineHighlightBackground': token('surface'),
+      'editor.selectionBackground': token('selection'), 'editorCursor.foreground': accent,
+      'editorIndentGuide.background1': token('line'), 'editorWidget.background': token('surface'),
+      'editorWidget.border': token('edge'), 'focusBorder': accent,
+    },
+  })
+}
 
 export function mountMonaco(host: HTMLElement, text: string, state: editor.ICodeEditorViewState | null, onChange: (text: string) => void) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)')
+  applyEditorTheme()
   const instance: editor.IStandaloneCodeEditor = monaco.editor.create(host, {
     value: text, language: 'markdown', theme: 'folio', automaticLayout: true,
     ariaLabel: 'Markdown source', minimap: { enabled: false }, glyphMargin: false, folding: false,
@@ -38,11 +46,14 @@ export function mountMonaco(host: HTMLElement, text: string, state: editor.ICode
   // Monaco normalizes mixed line endings; retain the original until the first edit.
   if (state) instance.restoreViewState(state)
   const changes = instance.onDidChangeModelContent(() => onChange(model?.getValue() ?? ''))
+  const appearance = new MutationObserver(applyEditorTheme)
+  appearance.observe(document.documentElement, { attributeFilter: ['data-theme'] })
   const motion = () => instance.updateOptions({ cursorSmoothCaretAnimation: reduced.matches ? 'off' : 'on', smoothScrolling: !reduced.matches })
   reduced.addEventListener('change', motion)
   return {
     instance,
     destroy() {
+      appearance.disconnect()
       reduced.removeEventListener('change', motion)
       changes.dispose()
       instance.dispose()
