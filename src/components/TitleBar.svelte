@@ -31,7 +31,6 @@
 <header class="titlebar" data-tauri-drag-region>
   <div class="window-controls" class:browser={!native} aria-hidden="true">{#if !native}<i></i><i></i><i></i>{/if}</div>
   <button type="button" class="icon-button side-toggle" aria-label="Toggle sidebar" aria-pressed={sidebar} title="Toggle sidebar" onclick={toggleSidebar}><PanelLeft size={16} /></button>
-  <div class="top-divider"></div>
   <button type="button" class="icon-button home-tab" aria-label="Home" aria-pressed={workspace.page === 'home'} title="Home" onclick={() => workspace.show('home')}><House size={16} /></button>
   <div class="tab-strip" role="group" aria-label="Open notes">
     {#each workspace.tabs as path (path)}

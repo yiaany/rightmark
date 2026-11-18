@@ -10,7 +10,7 @@ Mode: Operate. The person using the app wants to get back to a note, not look at
 
 **STORY:** Open a folder, find a file without tab clutter, and write directly into the formatted page. Tasks stay in the Markdown that created them.
 
-**FIRST VIEWPORT:** Native window controls, a short tab strip, a narrow file sidebar, and a centered Home with file actions and recent notes. Inside a note, the view switch stays in the title bar and the document has a comfortable reading measure.
+**FIRST VIEWPORT:** Native window controls, a short tab strip, a narrow file sidebar, and a centered Home with file actions and recent notes. The title bar and sidebar share one uninterrupted graphite surface. The darker document starts at a rounded inside corner. Inside a note, the view switch stays in the title bar and the document has a comfortable reading measure.
 
 **FORM:** seed: none (pinned). “оверлей берешь у Маркпад … табы … режимы эдитора, сплитвью, превью … хоум”. Signature interaction: a small sidebar preview opens on deliberate hover without moving the document or creating a tab.
 

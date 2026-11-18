@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-18T00:00:00Z",
+  "title": "Design System: Folio",
+  "extensions": {
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(.23, 1, .32, 1)", "purpose": "Folder disclosure and pointer preview" }
+    ],
+    "breakpoints": [
+      { "name": "compact-sidebar", "value": "930px" },
+      { "name": "collapse-sidebar", "value": "700px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Open Folder",
+      "kind": "button",
+      "refersTo": "primary-button",
+      "description": "Primary file action on Home.",
+      "html": "<button class=\"ds-file-action\">Open folder</button>",
+      "css": ".ds-file-action{height:32px;padding:0 13px;background:#0078d4;color:white;border:1px solid #1678c2;border-radius:4px;font:570 12px -apple-system,system-ui,sans-serif}.ds-file-action:hover{background:#0876c8}.ds-file-action:focus-visible{outline:2px solid #79b7ff;outline-offset:-2px}"
+    },
+    {
+      "name": "Workspace Corner",
+      "kind": "custom",
+      "description": "The editor silhouette joins a continuous title bar and sidebar.",
+      "html": "<div class=\"ds-chrome\"><div class=\"ds-canvas\"></div></div>",
+      "css": ".ds-chrome{background:#202020;padding:18px 0 0 32px}.ds-canvas{background:#181818;border-top-left-radius:12px;height:72px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "One window, one writing surface",
+    "overview": "The window follows Markpad's compact desktop proportions. The workspace has two visual layers: a single graphite surface for navigation and a darker surface for the document. Home is a file picker with recents, not a dashboard."
+  }
+}

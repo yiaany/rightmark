@@ -1,6 +1,6 @@
 <script lang="ts">
   import { SvelteSet } from 'svelte/reactivity'
-  import { CheckSquare, ChevronDown, ChevronRight, FileText, Folder, FolderOpen, Plus, Search } from '@lucide/svelte'
+  import { CheckSquare, ChevronRight, FileText, Folder, FolderOpen, Plus } from '@lucide/svelte'
   import { noteName, type Note } from '../lib/notes.ts'
   import { hoverExcerpt } from '../lib/markdown.ts'
   import type { Workspace } from '../lib/workspace.svelte.ts'
@@ -8,6 +8,7 @@
   let { workspace }: { workspace: Workspace } = $props()
   type FolderNode = { path: string; name: string; folders: Map<string, FolderNode>; files: Note[] }
   let closed = new SvelteSet<string>()
+  let instant = $state('')
   let peek = $state<{ path: string; y: number; x: number; html: string }>()
   let timer: ReturnType<typeof setTimeout> | undefined
   let pending: string | undefined
@@ -28,6 +29,12 @@
 
   function clearPeek() { clearTimeout(timer); pending = undefined; peek = undefined }
 
+  function toggleFolder(path: string, event: MouseEvent) {
+    instant = event.detail === 0 ? path : ''
+    if (closed.has(path)) closed.delete(path)
+    else closed.add(path)
+  }
+
   function beginPeek(event: PointerEvent, path: string) {
     clearPeek()
     if (event.pointerType === 'touch' || !matchMedia('(hover: hover) and (pointer: fine)').matches) return
@@ -47,11 +54,14 @@
 
 {#snippet rows(branch: FolderNode, depth: number)}
   {#each [...branch.folders.values()].sort((a, b) => a.name.localeCompare(b.name)) as group (group.path)}
-    <button type="button" class="side-row tree-row" aria-expanded={!closed.has(group.path)} style:--depth={depth}
-      onclick={() => { if (closed.has(group.path)) closed.delete(group.path); else closed.add(group.path) }}>
-      {#if closed.has(group.path)}<ChevronRight size={13} /><Folder size={15} />{:else}<ChevronDown size={13} /><FolderOpen size={15} />{/if}<span>{group.name}</span>
+    <button type="button" class="side-row tree-row folder-row" class:instant={instant === group.path} aria-expanded={!closed.has(group.path)} style:--depth={depth}
+      onclick={(event) => toggleFolder(group.path, event)}>
+      <ChevronRight class="folder-chevron" size={13} />
+      {#if closed.has(group.path)}<Folder size={15} />{:else}<FolderOpen size={15} />{/if}<span>{group.name}</span>
     </button>
-    {#if !closed.has(group.path)}{@render rows(group, depth + 1)}{/if}
+    <div class="folder-reveal" class:collapsed={closed.has(group.path)} class:instant={instant === group.path} inert={closed.has(group.path)}>
+      <div class="folder-contents">{@render rows(group, depth + 1)}</div>
+    </div>
   {/each}
   {#each branch.files as note (note.path)}
     <button type="button" class="side-row tree-row note-row" class:selected={workspace.page === 'note' && workspace.activePath === note.path}

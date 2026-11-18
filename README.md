@@ -8,6 +8,8 @@ Use Node.js 22.18 or later, Rust, and the macOS command-line developer tools. In
 
 `npm run check` checks the TypeScript and Svelte code. `npm test` runs the workspace tests. `cargo test --manifest-path src-tauri/Cargo.toml` tests native file storage. `npm run tauri -- build --bundles app` creates the local macOS app bundle; builds from this repository are unsigned.
 
+See [DESIGN.md](DESIGN.md) for the window layout and interaction details. The macOS app icon is generated from `assets/folio-icon.svg` with the Tauri CLI.
+
 ## Storage
 
 The selected folder is the source of truth. Existing `.md` and `.markdown` files are read in place. The sample workspace is stored separately in Folio's application data directory. Original Markdown remains readable without Folio. The application compares the saved revision before replacing a note and refuses to overwrite an external change. Visual editing is limited to Markdown the editor can safely represent; source mode remains available for any supported file.

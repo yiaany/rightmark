@@ -63,14 +63,14 @@
         {/key}
       {:else if workspace.page === 'tasks'}<Tasks {workspace} />
       {:else}<Home {workspace} />{/if}
+      {#if note}
+        <footer class="statusbar">
+          <span>Markdown</span><div></div>
+          <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+          <span aria-live="polite">{#if note.error}<CircleAlert size={13} />Not saved{:else if note.saved !== note.text}Saving…{:else}Saved{/if}</span>
+        </footer>
+      {/if}
     </main>
   </div>
-  {#if note}
-    <footer class="statusbar">
-      <span>Markdown</span><div></div>
-      <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
-      <span aria-live="polite">{#if note.error}<CircleAlert size={13} />Not saved{:else if note.saved !== note.text}Saving…{:else}Saved{/if}</span>
-    </footer>
-  {/if}
 </div>
 <SearchDialog {workspace} bind:this={searchDialog} />
