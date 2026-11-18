@@ -22,7 +22,6 @@
   let searchDialog: SearchDialog
   let note = $derived(workspace.page === 'note' ? workspace.active : undefined)
   let storageError = $derived([...workspace.sessions.values()].find((session) => session.error))
-  let wordCount = $derived(note?.text.match(/\S+/g)?.length ?? 0)
 
   onMount(() => {
     void workspace.start()
@@ -81,7 +80,7 @@
   <TitleBar {workspace} {sidebar} {toggleSidebar} {search} {theme} onTheme={changeTheme} />
   <div class="workspace-shell" class:with-sidebar={sidebar} class:animate-sidebar={animateSidebar}>
     <div class="sidebar-slot" inert={!sidebar}><Sidebar {workspace} visible={sidebar} /></div>
-    <main class="workspace-panel" aria-label={note ? noteName(note.path) : { graph: 'Graph', tasks: 'Tasks', home: 'Home', settings: 'Settings', note: 'Note' }[workspace.page]}>
+    <main class="workspace-panel" class:document-panel={!!note} aria-label={note ? noteName(note.path) : { graph: 'Graph', tasks: 'Tasks', home: 'Home', settings: 'Settings', note: 'Note' }[workspace.page]}>
       {#if workspace.error || storageError}
         <div class="app-error" role="alert"><CircleAlert size={15} /><span>{workspace.error || storageError?.error}</span>
           {#if workspace.error}<button type="button" aria-label="Dismiss message" onclick={() => { workspace.error = '' }}><X size={14} /></button>{/if}
@@ -97,13 +96,6 @@
       {:else if workspace.page === 'graph'}
         {#await import('./components/Graph.svelte') then { default: Graph }}<Graph {workspace} />{:catch}<p class="pane-message">Could not open the graph.</p>{/await}
       {:else}<Home {workspace} />{/if}
-      {#if note}
-        <footer class="statusbar">
-          <span>Markdown</span><div></div>
-          <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
-          <span aria-live="polite">{#if note.error}<CircleAlert size={13} />Not saved{:else if note.saved !== note.text}Saving…{:else}Saved{/if}</span>
-        </footer>
-      {/if}
     </main>
   </div>
 </div>

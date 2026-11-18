@@ -76,11 +76,11 @@ The window follows Markpad's compact desktop proportions. The workspace has two 
 
 ## Colors
 
-In Dark, the title bar and sidebar share `#202020` and the canvas is `#1a1a1a`, including the editor, graph, and status strip. Use pure white for the primary Home action. In Light, the shared chrome is `#f5f4f1` against a white canvas. Menus, view selections, and file selections use neutral fills. Light and System are available from the title bar and Settings. Monaco and the graph read the same CSS palette as the rest of the app.
+In Dark, the title bar and sidebar share `#202020` and the canvas is `#1a1a1a`, including the editor and graph. Use pure white for the primary Home action. In Light, the shared chrome is `#f5f4f1` against a white canvas. Menus, view selections, and file selections use neutral fills. Light and System are available from the title bar and Settings. Monaco and the graph read the same CSS palette as the rest of the app.
 
 ## Layout
 
-The title bar is 44 px high and the sidebar is 224 px wide at the default macOS window size. Native traffic lights and the sidebar toggle share the title bar's vertical centerline. The theme picker sits at the right; window minimization stays in the native traffic lights. The sidebar and title bar remain continuous. The workspace panel has a 12 px radius with a barely lighter hairline; the note body is at most 675 px wide.
+The title bar is 44 px high and the sidebar is 224 px wide at the default macOS window size. Native traffic lights and the sidebar toggle share the title bar's vertical centerline. The theme picker sits at the right; window minimization stays in the native traffic lights. The sidebar and title bar remain continuous. Workspace panels use a 12 px radius with a barely lighter hairline. The document panel keeps the rounded upper-left corner and extends to the right and bottom window edges without an inset, border, or status bar on those edges. Save failures remain visible above the editor. The note body is at most 675 px wide.
 
 ## Components
 

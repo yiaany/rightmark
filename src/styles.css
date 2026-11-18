@@ -122,14 +122,15 @@ kbd { font: 11px var(--ui); color: var(--muted); white-space: nowrap; }
 .theme-options button:hover, .theme-options button[aria-pressed='true'] { color: var(--ink); background: var(--selected); }
 .theme-options.compact button[aria-pressed='true']::after { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-left: auto; }
 
-.workspace-shell { display: grid; grid-template-columns: 6px minmax(0, 1fr); min-height: 0; padding: 0 6px 6px 0; }
+.workspace-shell { display: grid; grid-template-columns: 6px minmax(0, 1fr); min-height: 0; }
 .workspace-shell.with-sidebar { grid-template-columns: var(--sidebar-width) minmax(0, 1fr); }
-.sidebar-slot { min-width: 0; min-height: 0; overflow: clip; }
+.sidebar-slot { min-width: 0; min-height: 0; margin-bottom: 6px; overflow: clip; }
 .sidebar-slot[inert]:not(.animate-sidebar *) { visibility: hidden; }
 @media (prefers-reduced-motion: no-preference) {
   .workspace-shell.animate-sidebar { transition: grid-template-columns 185ms var(--ease-out); }
 }
-.workspace-panel { min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; overflow: clip; background: var(--canvas); border: 1px solid var(--panel-edge); border-radius: var(--workspace-corner); }
+.workspace-panel { min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; margin: 0 6px 6px 0; overflow: clip; background: var(--canvas); border: 1px solid var(--panel-edge); border-radius: var(--workspace-corner); }
+.workspace-panel.document-panel { margin: 0; border-right: 0; border-bottom: 0; border-radius: var(--workspace-corner) 0 0; }
 .sidebar { display: flex; flex-direction: column; width: var(--sidebar-width); height: 100%; min-height: 0; padding: 5px 10px 1px; }
 .sidebar-nav { display: grid; gap: 2px; margin-bottom: 17px; }
 .side-row { display: flex; width: 100%; gap: 9px; align-items: center; min-width: 0; height: 29px; padding: 0 9px; border-radius: var(--control-radius); text-align: left; color: var(--body); font-size: 12px; }
@@ -192,9 +193,6 @@ kbd { font: 11px var(--ui); color: var(--muted); white-space: nowrap; }
 .recent-note small { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .home-empty { margin-top: 15px; color: var(--muted); }
 
-.statusbar { height: 22px; flex-shrink: 0; background: var(--canvas); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 15px; padding: 0 10px; color: var(--muted); font-size: 11px; }
-.statusbar div { flex: 1; }
-.statusbar span { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 .app-error { z-index: 5; position: relative; flex-shrink: 0; padding: 9px 12px; border-bottom: 1px solid var(--danger-line); display: flex; align-items: center; gap: 8px; background: var(--danger-bg); color: var(--danger); overflow-wrap: anywhere; }
 .app-error span { flex: 1; }
 .app-error button { padding: 3px; }
