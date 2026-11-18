@@ -17,6 +17,7 @@ colors:
   preview-close: '#ff5f57'
   preview-minimize: '#ffbd2e'
   preview-zoom: '#28c840'
+  command-checkbox: '#2b6de8'
 typography:
   menu-label:
     fontSize: '10px'
@@ -34,6 +35,8 @@ typography:
     fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif'
     fontSize: '15px'
     lineHeight: 1.7
+  command-title-glyph:
+    fontSize: '16px'
   pane-heading:
     fontSize: '17px'
   split-subheading:
@@ -58,6 +61,7 @@ rounded:
   search: '9px'
   preferences: '10px'
   workspace-corner: '12px'
+  command-picker: '14px'
 components:
   primary-button:
     backgroundColor: '{colors.primary}'
@@ -92,7 +96,7 @@ The title bar is 44 px high and the sidebar is 248 px wide at the default macOS 
 
 **Hover preview:** After a deliberate pointer pause, a small card opens beside the file without moving the document or creating a tab.
 
-**Slash menu:** Group commands by Text, Lists, and Blocks. Use one line icon per command, neutral selection, and no persistent instruction in the editor toolbar.
+**Slash menu:** A dark canvas-colored picker (white in Light) sits beside the slash. Use a thin border, 14 px corners, 34 px rows, and subtle rules between Text, List, and Blocks. Text and headings show typographic previews; the blue checkbox glyph is the only colored icon. Selection uses a neutral fill. The menu opens instantly and scrolls independently.
 
 **Caret:** Typed characters appear immediately. In the visual editor, a 65 ms glide applies only to short horizontal caret movement. Use the native caret for selection, IME, and reduced motion.
 

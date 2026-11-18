@@ -244,15 +244,21 @@ kbd { font: 11px var(--ui); color: var(--muted); white-space: nowrap; }
 .pane-message { color: var(--muted); margin: 20px; }
 .source-notice { display: flex; gap: 12px; align-items: center; justify-content: space-between; color: var(--muted); background: var(--surface); border: 1px solid var(--edge); border-radius: 5px; padding: 9px 10px; margin: 0 0 26px; font-size: 12px; }
 .source-notice button { color: var(--accent); white-space: nowrap; }
-.slash-menu { width: 242px; position: fixed; z-index: 10; display: grid; align-content: start; padding: 5px; border: 1px solid var(--edge); border-radius: 8px; box-shadow: var(--shadow); background: var(--surface); overflow: auto; overscroll-behavior: contain; }
+.slash-menu { position: fixed; z-index: 10; padding: 8px; border: 1px solid var(--panel-edge); border-radius: 14px; box-shadow: var(--shadow); background: var(--canvas); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .slash-menu.above { transform: translateY(-100%); }
-.slash-section { padding: 7px 9px 4px; color: var(--muted); font-size: 10px; line-height: 1.25; font-weight: 590; }
-.slash-section:not(:first-child) { margin-top: 4px; border-top: 1px solid var(--line); }
-.slash-menu button { display: flex; align-items: center; gap: 10px; height: 30px; border-radius: 5px; padding: 0 9px; text-align: left; color: var(--body); font-size: 12px; }
-.slash-menu button svg { color: var(--muted); }
-.slash-menu button[aria-selected='true'] { background: var(--selected); color: var(--ink); }
-.slash-menu button[aria-selected='true'] svg { color: var(--ink); }
-.slash-menu p { margin: 7px; color: var(--muted); }
+.slash-group + .slash-group { margin: 10px 0 0; padding: 9px 0 0; border-top: 1px solid var(--line); }
+.slash-section { padding: 4px 6px 10px; color: var(--muted); font-size: 13px; line-height: 1.35; font-weight: 500; }
+.slash-menu button { display: flex; align-items: center; width: 100%; min-height: 34px; gap: 8px; border-radius: var(--control-radius); padding: 0 7px; text-align: left; color: var(--body); font-size: 15px; }
+.slash-menu button[aria-selected='true'] { background: var(--surface); color: var(--ink); }
+.slash-menu button:active { background: var(--selected); }
+.slash-glyph { display: grid; place-items: center; flex: 0 0 20px; height: 20px; color: var(--body); font-size: 15px; line-height: 1; }
+.slash-glyph[data-glyph='title'] { font-size: 16px; font-weight: 700; }
+.slash-glyph[data-glyph='heading'] { font-weight: 650; }
+.slash-glyph[data-glyph='subheading'] { font-size: 14px; font-weight: 600; }
+.slash-glyph[data-glyph='number'] { font-size: 13px; font-variant-numeric: tabular-nums; }
+.slash-glyph[data-glyph='bullet']::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.slash-glyph.checkbox-glyph svg { box-sizing: content-box; padding: 3px; border-radius: 50%; color: #fff; background: #2b6de8; }
+.slash-menu p { margin: 8px 6px; color: var(--muted); }
 
 .editor-panes { display: grid; min-height: 0; flex: 1; }
 .source-pane, .preview-pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; }

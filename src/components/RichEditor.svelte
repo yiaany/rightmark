@@ -17,17 +17,27 @@
   let ready = $state(false)
   let reason = $state('')
   let marks = $state('')
-  let slash = $state<{ from: number; to: number; x: number; y: number; above: boolean; maxHeight: number; value: string }>()
+  let slash = $state<ReturnType<typeof menuPosition> & { from: number; to: number; value: string }>()
   let menu: HTMLDivElement | undefined = $state()
   let item = $state(0)
   let dismissedAt = -1
   let matches = $derived(blockCommands.filter(({ label, terms }) => `${label} ${terms}`.toLowerCase().includes(slash?.value ?? '')))
+  let groups = $derived.by(() => {
+    const result = new Map<string, { block: (typeof blockCommands)[number]; index: number }[]>()
+    matches.forEach((block, index) => {
+      const group = result.get(block.group)
+      if (group) group.push({ block, index }); else result.set(block.group, [{ block, index }])
+    })
+    return [...result]
+  })
 
   $effect(() => {
-    const active = slash && matches[item] ? `block-command-${item}` : undefined
     const input = instance?.view.dom
-    if (active) input?.setAttribute('aria-activedescendant', active)
-    else input?.removeAttribute('aria-activedescendant')
+    if (!input) return
+    if (slash) input.setAttribute('aria-controls', 'block-commands')
+    else input.removeAttribute('aria-controls')
+    if (slash && matches[item]) input.setAttribute('aria-activedescendant', `block-command-${item}`)
+    else input.removeAttribute('aria-activedescendant')
   })
 
   function selectionChanged() {
@@ -42,19 +52,28 @@
     if (start === dismissedAt || (slash?.from === start && slash.to === from && slash.value === match[1].toLowerCase())) return
     const value = match[1].toLowerCase()
     const coords = slash?.from === start ? slash : menuPosition(editor, start)
-    if (slash?.value !== value) item = 0
+    if (slash?.value !== value) {
+      item = 0
+      if (menu) menu.scrollTop = 0
+    }
     slash = { ...coords, from: start, to: from, value }
   }
 
   function menuPosition(editor: Editor, start: number) {
     const caret = editor.view.coordsAtPos(start)
-    const below = window.innerHeight - caret.bottom - 30
-    const above = below < 242 && caret.top - 44 > below
+    const gap = 7
+    const inset = 12
+    const preferredHeight = 380
+    const width = Math.min(384, window.innerWidth - inset * 2)
+    const below = window.innerHeight - caret.bottom - gap - inset
+    const aboveRoom = caret.top - gap - scroller.getBoundingClientRect().top
+    const above = below < preferredHeight && aboveRoom > below
     return {
-      x: Math.max(10, Math.min(caret.left, window.innerWidth - 254)),
-      y: above ? caret.top - 6 : caret.bottom + 6,
+      x: Math.max(inset, Math.min(caret.left, window.innerWidth - width - inset)),
+      y: above ? caret.top - gap : caret.bottom + gap,
+      width,
       above,
-      maxHeight: Math.max(80, Math.min(320, above ? caret.top - 46 : below)),
+      maxHeight: Math.max(0, Math.min(preferredHeight, above ? aboveRoom : below)),
     }
   }
 
@@ -122,6 +141,7 @@
   function buttonDown(event: MouseEvent) { event.preventDefault() }
 </script>
 
+<svelte:window onresize={() => { if (slash && instance) slash = { ...slash, ...menuPosition(instance, slash.from) } }} />
 <div class="rich-pane" bind:this={scroller} onscroll={(event) => { rememberedScroll = event.currentTarget.scrollTop; slash = undefined }}>
   <div class="document-column">
     {#if ready && !reason}
@@ -152,10 +172,19 @@
 </div>
 
 {#if slash}
-  <div class="slash-menu" class:above={slash.above} bind:this={menu} style:left="{slash.x}px" style:top="{slash.y}px" style:max-height="{slash.maxHeight}px" id="block-commands" role="listbox" aria-label="Insert block">
-    {#each matches as block, index (block.label)}
-      {#if index === 0 || matches[index - 1].group !== block.group}<div class="slash-section" role="presentation">{block.group}</div>{/if}
-      <button type="button" role="option" id={`block-command-${index}`} tabindex="-1" aria-selected={item === index} onmousedown={buttonDown} onpointermove={() => { item = index }} onclick={() => selectBlock(index)}><block.icon size={15} strokeWidth={1.55} /><span>{block.label}</span></button>
+  <div class="slash-menu" class:above={slash.above} bind:this={menu} style:left="{slash.x}px" style:top="{slash.y}px" style:width="{slash.width}px" style:max-height="{slash.maxHeight}px" id="block-commands" role="listbox" aria-label="Insert block">
+    {#each groups as [group, entries] (group)}
+      <div class="slash-group" role="group" aria-label={group}>
+        <div class="slash-section" aria-hidden="true">{group}</div>
+        {#each entries as { block, index } (block.label)}
+          <button type="button" role="option" id={`block-command-${index}`} tabindex="-1" aria-selected={item === index} onmousedown={buttonDown} onpointermove={() => { item = index }} onclick={() => selectBlock(index)}>
+            <span class="slash-glyph" class:checkbox-glyph={block.badge} data-glyph={block.glyph} aria-hidden="true">
+              {#if block.glyph === 'number'}1.{:else if block.glyph && block.glyph !== 'bullet'}Aa{:else if block.icon}<block.icon size={block.badge ? 12 : 16} strokeWidth={block.badge ? 2.2 : 1.6} />{/if}
+            </span>
+            <span>{block.label}</span>
+          </button>
+        {/each}
+      </div>
     {:else}<p>No matching blocks</p>{/each}
   </div>
 {/if}
