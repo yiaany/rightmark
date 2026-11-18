@@ -80,13 +80,13 @@ In Dark, the title bar and sidebar share `#202020` and the canvas is `#1a1a1a`, 
 
 ## Layout
 
-The title bar is 44 px high and the sidebar is 224 px wide at the default macOS window size. Native traffic lights and the sidebar toggle share the title bar's vertical centerline. The theme picker sits at the right; window minimization stays in the native traffic lights. The sidebar and title bar remain continuous. Workspace panels use a 12 px radius with a barely lighter hairline. The document panel keeps the rounded upper-left corner and extends to the right and bottom window edges without an inset, border, or status bar on those edges. Save failures remain visible above the editor. The note body is at most 675 px wide.
+The title bar is 44 px high and the sidebar is 248 px wide at the default macOS window size. Native traffic lights and the sidebar toggle share the title bar's vertical centerline. Tabs begin above the document, aligned to the sidebar boundary when open. The theme picker sits at the right; window minimization stays in the native traffic lights. The sidebar and title bar remain continuous. Workspace panels use a 12 px radius with a barely lighter hairline. The document panel keeps the rounded upper-left corner and extends to the right and bottom window edges without an inset, border, or status bar on those edges. Save failures remain visible above the editor. The note body is at most 675 px wide.
 
 ## Components
 
 **Home:** A centered welcome, two compact file actions, and a quiet two-column list of recent notes. No decorative mark, workspace badge, or subtitle is needed.
 
-**Sidebar:** Home, Graph, and Tasks are workspace destinations. File actions sit at the right of the tree heading. Settings stays at the bottom below a short horizontal rule. Folders and files use Lucide glyphs and consistent indentation.
+**Sidebar:** Home, Graph, and Tasks use 14 px labels in 36 px rows. The file tree uses 14 px labels in 32 px rows, with Lucide glyphs and consistent indentation. File actions sit at the right of the tree heading. Settings stays at the bottom below a short horizontal rule.
 
 **Folders:** A single disclosure chevron turns while the child rows open together. The grid track expands in 190 ms and closes in 165 ms. Keyboard activation and reduced motion skip the transition. Closed rows are inert immediately.
 

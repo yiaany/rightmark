@@ -62,8 +62,8 @@
   {#each [...branch.folders.values()].sort((a, b) => a.name.localeCompare(b.name)) as group (group.path)}
     <button type="button" class="side-row tree-row folder-row" class:instant={instant === group.path} aria-expanded={!closed.has(group.path)} style:--depth={depth}
       onclick={(event) => toggleFolder(group.path, event)}>
-      <ChevronRight class="folder-chevron" size={11} strokeWidth={1.7} />
-      {#if closed.has(group.path)}<Folder size={15} strokeWidth={1.55} />{:else}<FolderOpen size={15} strokeWidth={1.55} />{/if}
+      <ChevronRight class="folder-chevron" size={12} strokeWidth={1.7} />
+      {#if closed.has(group.path)}<Folder size={16} strokeWidth={1.6} />{:else}<FolderOpen size={16} strokeWidth={1.6} />{/if}
       <span>{group.name}</span>
     </button>
     <div class="folder-reveal" class:collapsed={closed.has(group.path)} class:instant={instant === group.path} inert={closed.has(group.path)}>
@@ -73,21 +73,21 @@
   {#each branch.files as note (note.path)}
     <button type="button" class="side-row tree-row note-row" class:selected={workspace.page === 'note' && workspace.activePath === note.path}
       style:--depth={depth} aria-current={workspace.page === 'note' && workspace.activePath === note.path ? 'page' : undefined} onpointerenter={(event) => beginPeek(event, note.path)} onpointerleave={clearPeek}
-       onclick={() => { clearPeek(); void workspace.open(note.path) }}><FileText size={14} strokeWidth={1.55} /><span>{noteName(note.path)}</span></button>
+       onclick={() => { clearPeek(); void workspace.open(note.path) }}><FileText size={16} strokeWidth={1.6} /><span>{noteName(note.path)}</span></button>
   {/each}
 {/snippet}
 
 <aside class="sidebar" id="workspace-sidebar" aria-label="Workspace sidebar">
   <nav class="sidebar-nav" aria-label="Workspace">
     {#each destinations as destination (destination.id)}
-      <button type="button" class="side-row" class:selected={workspace.page === destination.id} aria-current={workspace.page === destination.id ? 'page' : undefined} onclick={() => workspace.show(destination.id)}><destination.icon size={15} strokeWidth={1.55} /><span>{destination.label}</span></button>
+      <button type="button" class="side-row" class:selected={workspace.page === destination.id} aria-current={workspace.page === destination.id ? 'page' : undefined} onclick={() => workspace.show(destination.id)}><destination.icon size={17} strokeWidth={1.65} /><span>{destination.label}</span></button>
     {/each}
   </nav>
   <div class="side-section">
     <span title={workspace.info?.sample ? undefined : workspace.info?.name}>{workspace.info?.sample ? 'Files' : workspace.info?.name ?? 'Files'}</span>
     <div class="file-actions">
-      <button type="button" class="icon-button" aria-label="Open folder" title="Open folder…" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}><FolderOpen size={14} strokeWidth={1.55} /></button>
-      <button class="icon-button" type="button" aria-label="New note" title="New note" disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={15} strokeWidth={1.55} /></button>
+      <button type="button" class="icon-button" aria-label="Open folder" title="Open folder…" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}><FolderOpen size={16} strokeWidth={1.6} /></button>
+      <button class="icon-button" type="button" aria-label="New note" title="New note" disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={17} strokeWidth={1.6} /></button>
     </div>
   </div>
   <div class="file-tree" onscroll={clearPeek}>
@@ -95,7 +95,7 @@
     {#if !workspace.notes.length}<p>{workspace.busy ? 'Opening folder…' : 'No Markdown files'}</p>{/if}
   </div>
   <div class="sidebar-footer">
-    <button type="button" class="side-row" class:selected={workspace.page === 'settings'} aria-current={workspace.page === 'settings' ? 'page' : undefined} title="Settings (⌘,)" onclick={() => workspace.show('settings')}><Settings2 size={15} strokeWidth={1.6} /><span>Settings</span></button>
+    <button type="button" class="side-row" class:selected={workspace.page === 'settings'} aria-current={workspace.page === 'settings' ? 'page' : undefined} title="Settings (⌘,)" onclick={() => workspace.show('settings')}><Settings2 size={17} strokeWidth={1.65} /><span>Settings</span></button>
   </div>
 </aside>
 

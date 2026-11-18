@@ -76,9 +76,9 @@
 </script>
 
 <svelte:window onkeydown={shortcuts} />
-<div class="app-shell" class:native>
+<div class="app-shell" class:native class:with-sidebar={sidebar} class:animate-sidebar={animateSidebar}>
   <TitleBar {workspace} {sidebar} {toggleSidebar} {search} {theme} onTheme={changeTheme} />
-  <div class="workspace-shell" class:with-sidebar={sidebar} class:animate-sidebar={animateSidebar}>
+  <div class="workspace-shell">
     <div class="sidebar-slot" inert={!sidebar}><Sidebar {workspace} visible={sidebar} /></div>
     <main class="workspace-panel" class:document-panel={!!note} aria-label={note ? noteName(note.path) : { graph: 'Graph', tasks: 'Tasks', home: 'Home', settings: 'Settings', note: 'Note' }[workspace.page]}>
       {#if workspace.error || storageError}
