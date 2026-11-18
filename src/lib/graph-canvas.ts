@@ -7,14 +7,21 @@ type Edge = { source: Node; target: Node }
 type Camera = Point & { scale: number }
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
 
+function graphPalette(canvas: HTMLCanvasElement) {
+  const style = getComputedStyle(canvas)
+  const color = (name: string) => style.getPropertyValue(`--${name}`).trim()
+  return { line: color('graph-line'), node: color('graph-node'), orphan: color('graph-orphan'), grid: color('graph-grid'), ink: color('ink'), muted: color('muted'), accent: color('accent') }
+}
+
 export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void, select: (id: string) => void) {
   const context = canvas.getContext('2d')!
+  let palette = graphPalette(canvas)
   const reduced = matchMedia('(prefers-reduced-motion: reduce)')
   let nodes: Node[] = [], edges: Edge[] = []
   let neighbors = new Map<string, Set<string>>()
   let size = { width: 0, height: 0 }, ratio = 1
   let camera: Camera = { x: 0, y: 0, scale: 1 }, target = { ...camera }
-  let hovered = '', selected = '', focus = 0
+  let hovered = '', selected = '', fading = '', focus = 0
   let frame = 0, last = 0, fitted = false
   let drag: { pointer: number; down: Point; previous: Point; node?: Node; offset?: Point; moved: boolean } | undefined
   const simulation = forceSimulation<Node>([]).stop().alphaMin(.026).alphaDecay(.047).velocityDecay(.43)
@@ -31,8 +38,8 @@ export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void
       minX = Math.min(minX, x); maxX = Math.max(maxX, x)
       minY = Math.min(minY, y); maxY = Math.max(maxY, y)
     }
-    const padding = nodes.length < 20 ? 196 : 115
-    target = { x: -(minX + maxX) / 2, y: -(minY + maxY) / 2, scale: clamp(Math.min(size.width / (maxX - minX + padding), size.height / (maxY - minY + padding)), .08, 1.55) }
+    const padding = nodes.length < 20 ? 170 : 115
+    target = { x: -(minX + maxX) / 2, y: -(minY + maxY) / 2, scale: clamp(Math.min(size.width / (maxX - minX + padding), size.height / (maxY - minY + padding)), .08, 1.7) }
     target.x *= target.scale; target.y *= target.scale
     if (immediate || reduced.matches) camera = { ...target }
     request()
@@ -51,7 +58,7 @@ export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void
     frame = 0
     const blend = reduced.matches ? 1 : 1 - Math.exp(-Math.min(32, time - last || 16) / 54)
     last = time
-    const focusTarget = hovered || selected ? 1 : 0
+    const focusTarget = hovered ? 1 : 0
     focus += (focusTarget - focus) * blend
     camera.x += (target.x - camera.x) * blend
     camera.y += (target.y - camera.y) * blend
@@ -59,9 +66,18 @@ export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void
     const { width, height } = size
     context.setTransform(ratio, 0, 0, ratio, 0, 0)
     context.clearRect(0, 0, width, height)
+    if (nodes.length) {
+      const spacing = 24 * 2 ** (Math.floor(Math.log2(1 / camera.scale)) + 1) * camera.scale
+      const startX = (width / 2 + camera.x) % spacing, startY = (height / 2 + camera.y) % spacing
+      context.beginPath()
+      for (let y = startY; y < height; y += spacing) for (let x = startX; x < width; x += spacing) {
+        context.moveTo(x + .65, y); context.arc(x, y, .65, 0, 2 * Math.PI)
+      }
+      context.fillStyle = palette.grid; context.globalAlpha = .15; context.fill()
+    }
     context.translate(width / 2 + camera.x, height / 2 + camera.y)
     context.scale(camera.scale, camera.scale)
-    const active = hovered || selected
+    const active = hovered || (focus > .01 ? fading : '')
     const near = neighbors.get(active)
     const radius = (node: Node) => Math.max(node.radius, 2 / camera.scale)
     const visible = (node: Node) => {
@@ -76,31 +92,32 @@ export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void
         context.moveTo(source.x, source.y); context.lineTo(target.x, target.y)
       }
       context.lineWidth = (highlight ? 1.25 : 1) / camera.scale
-      context.strokeStyle = highlight ? '#b2aaa0' : '#85817d'
-      context.globalAlpha = highlight ? .75 : .33 - .21 * focus
+      context.strokeStyle = highlight ? palette.accent : palette.line
+      context.globalAlpha = highlight ? .39 + .42 * focus : .39 - .22 * focus
       context.stroke()
     }
     const labels = []
     for (const node of nodes) {
       if (!visible(node)) continue
       const isActive = node.id === active
+      const isRoot = node.id === selected
       const isNear = near?.has(node.id)
       const r = radius(node)
       context.globalAlpha = isActive || isNear ? 1 : 1 - focus * .68
       context.beginPath(); context.arc(node.x, node.y, r, 0, Math.PI * 2)
-      context.fillStyle = isActive ? '#ece4d6' : isNear ? '#c5bbb0' : neighbors.has(node.id) ? '#9c9690' : '#625e5b'
+      context.fillStyle = isActive || isRoot ? palette.ink : isNear ? palette.accent : neighbors.has(node.id) ? palette.node : palette.orphan
       context.fill()
-      if (isActive) {
+      if (isActive || isRoot) {
         context.beginPath(); context.arc(node.x, node.y, r + 4 / camera.scale, 0, Math.PI * 2)
-        context.strokeStyle = '#8e8780'; context.lineWidth = 1 / camera.scale; context.stroke()
+        context.strokeStyle = palette.muted; context.lineWidth = 1 / camera.scale; context.stroke()
       }
-      if (isActive || (nodes.length <= 32 && camera.scale > .4) || (camera.scale > 1.1 && (isNear || node.incoming > 1))) labels.push({ node, isActive, isNear })
+      if (isActive || isRoot || (nodes.length <= 32 && camera.scale > .4) || (camera.scale > 1.1 && (isNear || node.incoming > 1))) labels.push({ node, strong: isActive || isRoot, isNear })
     }
     context.font = `${12 / camera.scale}px system-ui, sans-serif`
     context.textAlign = 'center'; context.textBaseline = 'top'
-    for (const { node, isActive, isNear } of labels) {
-      context.globalAlpha = isActive || isNear ? 1 : 1 - focus * .78
-      context.fillStyle = isActive ? '#f0e9df' : '#b5afa8'
+    for (const { node, strong, isNear } of labels) {
+      context.globalAlpha = strong || isNear ? 1 : 1 - focus * .78
+      context.fillStyle = strong ? palette.ink : palette.muted
       context.fillText(node.title.length > 42 ? `${node.title.slice(0, 41)}…` : node.title, node.x, node.y + radius(node) + 8 / camera.scale)
     }
     context.globalAlpha = 1
@@ -109,7 +126,7 @@ export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void
 
   function update(graph: NoteGraph, root: string) {
     const previous = new Map(nodes.map((node) => [node.id, node]))
-    selected = root; hovered = ''
+    selected = root; hovered = ''; fading = ''; focus = 0; select('')
     const reset = !fitted || !graph.nodes.some(({ id }) => previous.has(id))
     nodes = graph.nodes.map((node) => {
       const old = previous.get(node.id)
@@ -168,7 +185,10 @@ export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void
       drag.previous = point
       canvas.style.cursor = 'grabbing'
     } else {
-      hovered = hit(point)?.id ?? ''
+      const next = hit(point)?.id ?? ''
+      if (next === hovered) return
+      if (hovered) fading = hovered
+      hovered = next
       canvas.style.cursor = hovered ? 'pointer' : 'grab'
       select(hovered)
     }
@@ -187,7 +207,7 @@ export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void
     canvas.style.cursor = 'grab'
     request()
   }
-  function leave() { if (!drag) { hovered = ''; select(''); request() } }
+  function leave() { if (!drag && hovered) { fading = hovered; hovered = ''; select(''); request() } }
   function zoom(factor: number, point: Point = { x: 0, y: 0 }) {
     const scale = clamp(target.scale * factor, .06, 4)
     const multiple = scale / target.scale
@@ -212,12 +232,14 @@ export function mountGraph(canvas: HTMLCanvasElement, open: (id: string) => void
   function motionChange() { if (reduced.matches) simulation.stop(); request() }
   const observer = new ResizeObserver(resize)
   observer.observe(canvas)
+  const appearance = new MutationObserver(() => { palette = graphPalette(canvas); request() })
+  appearance.observe(document.documentElement, { attributeFilter: ['data-theme'] })
   canvas.addEventListener('pointerdown', down); canvas.addEventListener('pointermove', move); canvas.addEventListener('pointerup', up)
   canvas.addEventListener('pointercancel', up); canvas.addEventListener('lostpointercapture', up); canvas.addEventListener('pointerleave', leave)
   canvas.addEventListener('wheel', wheel, { passive: false }); canvas.addEventListener('keydown', key)
   reduced.addEventListener('change', motionChange)
   return { update, fit, zoom, destroy() {
-    observer.disconnect(); simulation.stop(); cancelAnimationFrame(frame)
+    observer.disconnect(); appearance.disconnect(); simulation.stop(); cancelAnimationFrame(frame)
     canvas.removeEventListener('pointerdown', down); canvas.removeEventListener('pointermove', move); canvas.removeEventListener('pointerup', up)
     canvas.removeEventListener('pointercancel', up); canvas.removeEventListener('lostpointercapture', up); canvas.removeEventListener('pointerleave', leave)
     canvas.removeEventListener('wheel', wheel); canvas.removeEventListener('keydown', key)

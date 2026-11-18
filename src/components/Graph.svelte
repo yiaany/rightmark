@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte'
-  import { Maximize, Minus, Plus, SlidersHorizontal } from '@lucide/svelte'
+  import { Focus, Minus, Plus, SlidersHorizontal } from '@lucide/svelte'
   import { buildGraph, filterGraph } from '../lib/graph.ts'
   import { mountGraph } from '../lib/graph-canvas.ts'
   import { noteFolder, noteName } from '../lib/notes.ts'
@@ -77,7 +77,7 @@
   <div class="graph-camera" role="group" aria-label="Graph camera">
     <button class="icon-button" aria-label="Zoom out" title="Zoom out" onclick={() => controls?.zoom(1 / 1.25)}><Minus size={15} /></button>
     <button class="icon-button" aria-label="Zoom in" title="Zoom in" onclick={() => controls?.zoom(1.25)}><Plus size={15} /></button>
-    <button class="icon-button" aria-label="Fit graph" title="Fit graph" onclick={fit}><Maximize size={14} /></button>
+    <button class="icon-button fit-graph" aria-label="Fit graph" title="Fit graph" onclick={fit}><Focus size={15} strokeWidth={1.55} /></button>
   </div>
 </section>
 
@@ -85,23 +85,24 @@
   .graph-view { position: relative; min-height: 0; flex: 1; overflow: hidden; isolation: isolate; }
   canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
   canvas:focus-visible { outline: 1px solid var(--accent); outline-offset: -2px; }
-  .graph-heading { position: absolute; top: 20px; left: 22px; pointer-events: none; }
-  h1 { margin: 0 0 3px; font-size: 15px; line-height: 1.2; font-weight: 625; }
+  .graph-heading { position: absolute; top: 19px; left: 21px; padding: 2px 4px; pointer-events: none; background: var(--canvas); border-radius: 5px; }
+  h1 { margin: 0 0 3px; font-size: 17px; line-height: 1.2; font-weight: 625; letter-spacing: -.02em; }
   .graph-heading span, .graph-caption small { color: var(--muted); font-size: 11px; }
-  .graph-tools { position: absolute; top: 17px; right: 16px; display: flex; align-items: center; gap: 7px; }
-  .graph-scope, .graph-settings summary, .graph-camera { display: flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--edge); border-radius: 6px; padding: 2px; }
+  .graph-tools { position: absolute; top: 18px; right: 17px; display: flex; align-items: center; gap: 6px; }
+  .graph-scope, .graph-settings summary, .graph-camera { display: flex; align-items: center; gap: 2px; background: var(--canvas); border: 1px solid var(--edge); border-radius: 7px; padding: 2px; }
   .graph-scope button { padding: 4px 8px; font-size: 11px; color: var(--muted); border-radius: 4px; white-space: nowrap; }
   .graph-scope button[aria-pressed='true'] { color: var(--ink); background: var(--selected); }
   .graph-scope button:hover:not(:disabled), .graph-settings summary:hover { color: var(--ink); }
   .graph-settings { position: relative; }
   .graph-settings summary { list-style: none; width: 30px; height: 29px; justify-content: center; color: var(--muted); cursor: pointer; }
   .graph-settings summary::-webkit-details-marker { display: none; }
-  .graph-settings > div { position: absolute; top: calc(100% + 7px); right: 0; width: 212px; padding: 9px 10px; border: 1px solid var(--edge); border-radius: 7px; background: var(--surface); box-shadow: 0 8px 24px #0007; }
+  .graph-settings > div { position: absolute; top: calc(100% + 7px); right: 0; width: 212px; padding: 9px 10px; border: 1px solid var(--edge); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow); }
   .graph-settings label { display: flex; align-items: center; gap: 8px; color: var(--body); font-size: 12px; }
   .graph-settings .graph-jump { align-items: stretch; flex-direction: column; border-top: 1px solid var(--line); margin-top: 9px; padding-top: 9px; gap: 5px; }
   select { max-width: 100%; font: inherit; color: var(--ink); background: var(--canvas); border: 1px solid var(--edge); border-radius: 4px; padding: 3px; }
-  .graph-camera { position: absolute; bottom: 15px; right: 16px; }
-  .graph-caption { position: absolute; bottom: 17px; left: 22px; color: var(--body); max-width: calc(100% - 130px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; pointer-events: none; }
+  .graph-camera { position: absolute; bottom: 17px; right: 17px; }
+  .graph-camera .fit-graph { margin-left: 2px; }
+  .graph-caption { position: absolute; bottom: 17px; left: 21px; padding: 5px 8px; color: var(--body); max-width: calc(100% - 140px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; pointer-events: none; background: var(--canvas); border: 1px solid var(--line); border-radius: 6px; }
   .graph-caption small { display: block; }
   .graph-empty { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; padding: 24px; }
   .graph-empty p { margin: 0 0 4px; font-weight: 600; }
