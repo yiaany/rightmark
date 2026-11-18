@@ -13,8 +13,9 @@ export class DocumentSession {
   scrollTop = 0
   richState?: unknown
   sourceState?: unknown
+  syncView?: () => void
   timer?: ReturnType<typeof setTimeout>
-  saving?: Promise<void>
+  saving?: Promise<boolean>
 
   constructor(readonly path: string, readonly key: string, text: string) {
     this.text = this.saved = text
@@ -80,7 +81,7 @@ export class Workspace {
     let saved: unknown
     try { saved = JSON.parse(localStorage.getItem(`folio:recent:${this.info?.key}`) ?? 'null') } catch { /* optional history */ }
     const known = new Set(notes.map((note) => note.path))
-    const lastModified = notes.toSorted((a, b) => b.modifiedAt - a.modifiedAt).map(({ path }) => path)
+    const lastModified = [...notes].sort((a, b) => b.modifiedAt - a.modifiedAt).map(({ path }) => path)
     const preferred = sample ? ['Start here.md', 'Field Notes/Studio refresh.md', 'Scratchpad.md', 'Field Notes/Walk through the studio.md', 'Reference/Light and color.md', 'Field Notes/Reading list.md'] : []
     return [...new Set([...(Array.isArray(saved) ? saved : []), ...preferred, ...lastModified])].filter((path) => known.has(path)).slice(0, 12)
   }
@@ -159,6 +160,7 @@ export class Workspace {
       }
       if (!this.tabs.includes(path)) this.tabs = [...this.tabs, path]
       if (!focus || navigation !== this.navigation) return
+      this.active?.syncView?.()
       this.activePath = path
       this.page = 'note'
       this.error = ''
@@ -170,6 +172,9 @@ export class Workspace {
   }
 
   show(page: 'home' | 'tasks') {
+    const active = this.active
+    active?.syncView?.()
+    if (active?.text !== active?.saved && active) void this.save(active)
     this.navigation++
     this.page = page
   }
@@ -193,7 +198,7 @@ export class Workspace {
     if (!key || !this.storage || this.busy) return
     try {
       const note = await this.storage.create(key)
-      if (this.info.key !== key) return
+      if (this.info?.key !== key) return
       this.notes = [...this.notes, note].sort((a, b) => noteName(a.path).localeCompare(noteName(b.path), 'en', { numeric: true }))
       this.indexText(note.path, '')
       await this.open(note.path)
@@ -208,21 +213,31 @@ export class Workspace {
   }
 
   async save(document: DocumentSession): Promise<boolean> {
+    document.syncView?.()
     clearTimeout(document.timer)
-    if (document.saving) await document.saving
-    if (document.saved === document.text) { document.error = ''; return true }
+    if (document.saving) return document.saving
     const storage = this.storage
     if (!storage) return false
-    const snapshot = document.text
-    document.saving = storage.write(document.key, document.path, snapshot, document.saved).then(() => {
-      document.saved = snapshot
+    if (document.saved === document.text) { document.error = ''; return true }
+    document.saving = this.writePending(storage, document).finally(() => { document.saving = undefined })
+    return document.saving
+  }
+
+  private async writePending(storage: Storage, document: DocumentSession) {
+    try {
+      // One writer per document. A keystroke during an in-flight write gets the next revision.
+      while (document.saved !== document.text) {
+        const snapshot = document.text
+        await storage.write(document.key, document.path, snapshot, document.saved)
+        document.saved = snapshot
+        if (this.info?.key === document.key) this.indexText(document.path, snapshot)
+      }
       document.error = ''
-      if (this.info?.key === document.key) this.indexText(document.path, snapshot)
-    }).catch((error: unknown) => {
+      return true
+    } catch (error) {
       document.error = String(error)
-    }).finally(() => { document.saving = undefined })
-    await document.saving
-    return !document.error && (document.saved === document.text || this.save(document))
+      return false
+    }
   }
 
   async flush() {
