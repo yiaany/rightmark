@@ -4,6 +4,8 @@ Folio is a small local Markdown workspace for macOS. Open a folder, switch betwe
 
 In Preview, type `/` on an empty line to insert headings, lists, tables, quotes, code, or dividers. Tables stay in the Markdown file. Open **Graph** from the sidebar or with `⌘⇧G` to browse the folder's internal links, or choose **Local** after opening a note. Change appearance in **Settings** (`⌘,`) or from the title bar.
 
+Select text in Preview for inline formatting and links. Hover beside a paragraph or list item and drag its handle to reorder it among siblings. `Option–Shift–↑ / ↓` moves the current block without a mouse.
+
 ## Development
 
 Use Node.js 22.18 or later, Rust, and the macOS command-line developer tools. Install the locked dependencies with `npm ci`. Use `npm run tauri -- dev` for the native app or `npm run dev` for an isolated browser demo. The demo uses browser storage and never reads or changes your local folders.

@@ -7,9 +7,10 @@ import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
-import { wikiPattern, visualBlockReason } from './markdown.ts'
+import { wikiPattern, visualBlockReason, visualInputBlockReason } from './markdown.ts'
 import { splitNote } from './notes.ts'
 import { smoothCaret } from './smooth-caret.ts'
+import { blockDrag } from './block-drag.ts'
 
 const WikiLink = Node.create({
   name: 'wikiLink',
@@ -38,12 +39,12 @@ const WikiLink = Node.create({
 
 export function createVisualEditor(element: HTMLElement, text: string, onChange: (text: string) => void, onSelection: () => void) {
   const { body, frontmatter } = splitNote(text)
+  const inputReason = visualInputBlockReason(body)
   let pending: ReturnType<typeof setTimeout> | undefined
   const editor = new Editor({
     element,
     extensions: [
       StarterKit.configure({
-        underline: false,
         link: { openOnClick: false, enableClickSelection: false },
       }),
       Markdown,
@@ -55,10 +56,11 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
       Placeholder.configure({ placeholder: 'Start writing…' }),
       smartInputRules,
       smoothCaret,
+      blockDrag,
     ],
     enablePasteRules: false,
     enableInputRules: inputRules,
-    content: body.length > 250_000 || /<[a-z!/]/i.test(body) ? '' : body,
+    content: inputReason ? '' : body,
     contentType: 'markdown',
     editorProps: {
       attributes: { 'aria-label': 'Write note', role: 'textbox', 'aria-multiline': 'true', spellcheck: 'true' },
@@ -77,7 +79,7 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
     },
     onTransaction: onSelection,
   })
-  const reason = visualBlockReason(body, editor.getMarkdown())
+  const reason = inputReason || visualBlockReason(body, editor.getMarkdown())
   if (reason) editor.setEditable(false, false)
   function flush() {
     if (!pending) return
