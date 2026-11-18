@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, tick } from 'svelte'
   import type { Editor } from '@tiptap/core'
-  import { Bold, CheckSquare, Code, Heading1, Heading2, Italic, List, ListOrdered, Pilcrow, Quote } from '@lucide/svelte'
+  import { Bold, Check, Code, Italic, List, Plus } from '@lucide/svelte'
+  import { blockCommands } from '../lib/block-commands.ts'
   import { followLink } from '../lib/links.ts'
   import { renderNote } from '../lib/markdown.ts'
   import type { DocumentSession } from '../lib/workspace.svelte.ts'
@@ -10,44 +11,51 @@
     document: DocumentSession; onChange: (text: string) => void; onLink: (target: string) => void; onSource: () => void
   } = $props()
 
-  const blocks = [
-    { label: 'Text', icon: Pilcrow, command: (editor: Editor) => editor.chain().focus().setParagraph().run() },
-    { label: 'Heading 1', icon: Heading1, command: (editor: Editor) => editor.chain().focus().toggleHeading({ level: 1 }).run() },
-    { label: 'Heading 2', icon: Heading2, command: (editor: Editor) => editor.chain().focus().toggleHeading({ level: 2 }).run() },
-    { label: 'Bullet list', icon: List, command: (editor: Editor) => editor.chain().focus().toggleBulletList().run() },
-    { label: 'Numbered list', icon: ListOrdered, command: (editor: Editor) => editor.chain().focus().toggleOrderedList().run() },
-    { label: 'Task list', icon: CheckSquare, command: (editor: Editor) => editor.chain().focus().toggleTaskList().run() },
-    { label: 'Quote', icon: Quote, command: (editor: Editor) => editor.chain().focus().toggleBlockquote().run() },
-    { label: 'Code block', icon: Code, command: (editor: Editor) => editor.chain().focus().toggleCodeBlock().run() },
-  ]
-
   let host: HTMLDivElement
   let scroller: HTMLDivElement
   let instance: Editor | undefined
   let ready = $state(false)
   let reason = $state('')
   let marks = $state('')
-  let slash = $state<{ from: number; to: number; x: number; y: number; value: string }>()
+  let slash = $state<{ from: number; to: number; x: number; y: number; above: boolean; maxHeight: number; value: string }>()
+  let menu: HTMLDivElement | undefined = $state()
   let item = $state(0)
   let dismissedAt = -1
-  let matches = $derived(blocks.filter(({ label }) => label.toLowerCase().includes(slash?.value ?? '')))
+  let matches = $derived(blockCommands.filter(({ label, terms }) => `${label} ${terms}`.toLowerCase().includes(slash?.value ?? '')))
+
+  $effect(() => {
+    const active = slash && matches[item] ? `block-command-${item}` : undefined
+    const input = instance?.view.dom
+    if (active) input?.setAttribute('aria-activedescendant', active)
+    else input?.removeAttribute('aria-activedescendant')
+  })
 
   function selectionChanged() {
     const editor = instance
     if (!editor) return
-    marks = ['bold', 'italic', 'code', 'taskList'].filter((mark) => editor.isActive(mark)).join(' ')
+    marks = ['bold', 'italic', 'code', 'taskList', 'table'].filter((mark) => editor.isActive(mark)).join(' ')
     const { empty, from, $from: position } = editor.state.selection
-    if (!empty || editor.isActive('codeBlock')) { slash = undefined; return }
+    if (!empty || editor.view.composing || editor.isActive('codeBlock') || editor.isActive('table')) { slash = undefined; return }
     const match = /^\/([\w -]{0,20})$/.exec(position.parent.textBetween(0, position.parentOffset, '\n'))
     if (!match) { dismissedAt = -1; slash = undefined; return }
     const start = from - match[0].length
-    if (start === dismissedAt) return
-    const coords = editor.view.coordsAtPos(from)
-    const x = Math.max(12, Math.min(coords.left, window.innerWidth - 228))
-    const y = coords.bottom + 260 > window.innerHeight ? Math.max(50, coords.top - Math.min(256, blocks.length * 30)) : coords.bottom + 6
+    if (start === dismissedAt || (slash?.from === start && slash.to === from && slash.value === match[1].toLowerCase())) return
     const value = match[1].toLowerCase()
+    const coords = slash?.from === start ? slash : menuPosition(editor, start)
     if (slash?.value !== value) item = 0
-    slash = { from: start, to: from, x, y, value }
+    slash = { ...coords, from: start, to: from, value }
+  }
+
+  function menuPosition(editor: Editor, start: number) {
+    const caret = editor.view.coordsAtPos(start)
+    const below = window.innerHeight - caret.bottom - 30
+    const above = below < 242 && caret.top - 44 > below
+    return {
+      x: Math.max(10, Math.min(caret.left, window.innerWidth - 254)),
+      y: above ? caret.top - 6 : caret.bottom + 6,
+      above,
+      maxHeight: Math.max(80, Math.min(320, above ? caret.top - 46 : below)),
+    }
   }
 
   function selectBlock(index: number) {
@@ -56,8 +64,7 @@
     if (!editor || !block || !slash) return
     const { from, to } = slash
     slash = undefined
-    editor.chain().focus().deleteRange({ from, to }).run()
-    block.command(editor)
+    block.apply(editor.chain().focus().deleteRange({ from, to })).run()
   }
 
   function handleSlashKeys(event: KeyboardEvent) {
@@ -67,6 +74,7 @@
       slash = undefined
     } else if (matches.length && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
       item = (item + (event.key === 'ArrowDown' ? 1 : matches.length - 1)) % matches.length
+      void tick().then(() => menu?.querySelector('button[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' }))
     } else if (matches.length && event.key === 'Enter') selectBlock(item)
     else return
     event.preventDefault()
@@ -123,8 +131,13 @@
         <button type="button" class="icon-button" aria-label="Inline code" title="Inline code" aria-pressed={marks.includes('code')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleCode().run()}><Code size={16} /></button>
         <span class="toolbar-divider"></span>
         <button type="button" class="icon-button" aria-label="Bullet list" title="Bullet list" onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleBulletList().run()}><List size={16} /></button>
-        <button type="button" class="icon-button" aria-label="Task list" title="Task list" aria-pressed={marks.includes('taskList')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleTaskList().run()}><CheckSquare size={15} /></button>
-        <span class="format-help"><kbd>/</kbd> for blocks</span>
+        <button type="button" class="icon-button" aria-label="Task list" title="Task list" aria-pressed={marks.includes('taskList')} onmousedown={buttonDown} onclick={() => instance?.chain().focus().toggleTaskList().run()}><Check size={16} /></button>
+        {#if marks.includes('table')}
+          <div class="table-tools">
+            <button type="button" onmousedown={buttonDown} onclick={() => instance?.chain().focus().addRowAfter().run()}><Plus size={12} /> Row</button>
+            <button type="button" onmousedown={buttonDown} onclick={() => instance?.chain().focus().addColumnAfter().run()}><Plus size={12} /> Column</button>
+          </div>
+        {/if}
       </div>
     {/if}
     {#if !ready}<p class="pane-message">Opening note…</p>{/if}
@@ -139,9 +152,10 @@
 </div>
 
 {#if slash}
-  <div class="slash-menu" style:left="{slash.x}px" style:top="{slash.y}px" role="group" aria-label="Insert block">
+  <div class="slash-menu" class:above={slash.above} bind:this={menu} style:left="{slash.x}px" style:top="{slash.y}px" style:max-height="{slash.maxHeight}px" id="block-commands" role="listbox" aria-label="Insert block">
     {#each matches as block, index (block.label)}
-      <button class:highlighted={item === index} type="button" onmousedown={buttonDown} onclick={() => selectBlock(index)}><block.icon size={15} />{block.label}</button>
+      {#if index === 0 || matches[index - 1].group !== block.group}<div class="slash-section" role="presentation">{block.group}</div>{/if}
+      <button type="button" role="option" id={`block-command-${index}`} tabindex="-1" aria-selected={item === index} onmousedown={buttonDown} onpointermove={() => { item = index }} onclick={() => selectBlock(index)}><block.icon size={15} strokeWidth={1.55} /><span>{block.label}</span></button>
     {:else}<p>No matching blocks</p>{/each}
   </div>
 {/if}

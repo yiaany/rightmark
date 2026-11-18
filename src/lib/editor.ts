@@ -9,6 +9,7 @@ import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
 import { wikiPattern, visualBlockReason } from './markdown.ts'
 import { splitNote } from './notes.ts'
+import { smoothCaret } from './smooth-caret.ts'
 
 const WikiLink = Node.create({
   name: 'wikiLink',
@@ -51,8 +52,9 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
       TaskItem.configure({ nested: true }),
       Image,
       TableKit,
-      Placeholder.configure({ placeholder: 'Start writing, or type / for blocks' }),
+      Placeholder.configure({ placeholder: 'Start writing…' }),
       smartInputRules,
+      smoothCaret,
     ],
     enablePasteRules: false,
     enableInputRules: inputRules,
@@ -81,7 +83,8 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
     if (!pending) return
     clearTimeout(pending)
     pending = undefined
-    let next = editor.isEmpty ? '' : editor.getMarkdown().trimEnd() + '\n'
+    const serialized = editor.getMarkdown().trimEnd()
+    let next = serialized ? serialized + '\n' : ''
     if (text.includes('\r\n')) next = next.replace(/\n/g, '\r\n')
     onChange(frontmatter + next)
   }

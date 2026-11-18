@@ -1,6 +1,6 @@
 <script lang="ts">
   import { SvelteSet } from 'svelte/reactivity'
-  import { CheckSquare, ChevronRight, FileText, Folder, FolderOpen, Plus } from '@lucide/svelte'
+  import { ChevronRight, File, FolderOpen, ListChecks, Plus } from '@lucide/svelte'
   import { noteName, type Note } from '../lib/notes.ts'
   import { hoverExcerpt } from '../lib/markdown.ts'
   import type { Workspace } from '../lib/workspace.svelte.ts'
@@ -56,8 +56,7 @@
   {#each [...branch.folders.values()].sort((a, b) => a.name.localeCompare(b.name)) as group (group.path)}
     <button type="button" class="side-row tree-row folder-row" class:instant={instant === group.path} aria-expanded={!closed.has(group.path)} style:--depth={depth}
       onclick={(event) => toggleFolder(group.path, event)}>
-      <ChevronRight class="folder-chevron" size={13} />
-      {#if closed.has(group.path)}<Folder size={15} />{:else}<FolderOpen size={15} />{/if}<span>{group.name}</span>
+      <ChevronRight class="folder-chevron" size={12} strokeWidth={1.7} /><span>{group.name}</span>
     </button>
     <div class="folder-reveal" class:collapsed={closed.has(group.path)} class:instant={instant === group.path} inert={closed.has(group.path)}>
       <div class="folder-contents">{@render rows(group, depth + 1)}</div>
@@ -66,7 +65,7 @@
   {#each branch.files as note (note.path)}
     <button type="button" class="side-row tree-row note-row" class:selected={workspace.page === 'note' && workspace.activePath === note.path}
       style:--depth={depth} aria-current={workspace.page === 'note' && workspace.activePath === note.path ? 'page' : undefined} onpointerenter={(event) => beginPeek(event, note.path)} onpointerleave={clearPeek}
-      onclick={() => { clearPeek(); void workspace.open(note.path) }}><FileText size={15} /><span>{noteName(note.path)}</span></button>
+       onclick={() => { clearPeek(); void workspace.open(note.path) }}><File size={13} strokeWidth={1.45} /><span>{noteName(note.path)}</span></button>
   {/each}
 {/snippet}
 
@@ -77,14 +76,14 @@
     {#if !workspace.notes.length}<p>{workspace.busy ? 'Opening folder…' : 'No Markdown files'}</p>{/if}
   </div>
   <div class="sidebar-footer">
-    <button type="button" class="side-row" class:selected={workspace.page === 'tasks'} onclick={() => workspace.show('tasks')}><CheckSquare size={15} /><span>Tasks</span></button>
-    <button type="button" class="icon-button" aria-label="Open folder" title="Open folder…" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}><FolderOpen size={16} /></button>
+    <button type="button" class="side-row" class:selected={workspace.page === 'tasks'} onclick={() => workspace.show('tasks')}><ListChecks size={15} strokeWidth={1.55} /><span>Tasks</span></button>
+    <button type="button" class="icon-button" aria-label="Open folder" title="Open folder…" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}><FolderOpen size={15} strokeWidth={1.55} /></button>
   </div>
 </aside>
 
 {#if peek}
   <div class="note-peek" role="tooltip" style:left="{peek.x}px" style:top="{peek.y}px">
-    <header><FileText size={14} /><span>{noteName(peek.path)}</span></header>
+    <header><File size={13} strokeWidth={1.45} /><span>{noteName(peek.path)}</span></header>
     {#if peek.html}<div class="prose peek-copy">{@html peek.html}</div>{:else}<p>This note is empty.</p>{/if}
   </div>
 {/if}
