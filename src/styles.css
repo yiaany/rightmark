@@ -81,9 +81,9 @@ a { color: var(--ink); text-underline-offset: .19em; text-decoration-color: var(
 kbd { font: 11px var(--ui); color: var(--muted); white-space: nowrap; }
 
 .app-shell { display: grid; grid-template-rows: var(--title-height) minmax(0, 1fr); height: 100%; background: var(--chrome); user-select: none; }
-.titlebar { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 2px 11px 0 0; }
+.titlebar { display: flex; align-items: center; gap: 4px; min-width: 0; padding-right: 11px; }
 .window-controls { flex: 0 0 88px; height: 100%; pointer-events: none; }
-.window-controls.browser { display: flex; align-items: center; gap: 7px; padding: 2px 0 0 17px; }
+.window-controls.browser { display: flex; align-items: center; gap: 7px; padding-left: 17px; }
 .window-controls i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
 .window-controls i:nth-child(2) { background: #ffbd2e; }
 .window-controls i:nth-child(3) { background: #28c840; }

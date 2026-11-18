@@ -1,7 +1,6 @@
 <script lang="ts">
   import { flip } from 'svelte/animate'
-  import { CodeXml, Eye, House, Minus, Monitor, Moon, PanelLeft, Plus, Search, SquareSplitHorizontal, Sun, X } from '@lucide/svelte'
-  import { getCurrentWindow } from '@tauri-apps/api/window'
+  import { CodeXml, Eye, House, Monitor, Moon, PanelLeft, Plus, Search, SquareSplitHorizontal, Sun, X } from '@lucide/svelte'
   import { onMount, tick } from 'svelte'
   import ThemeOptions from './ThemeOptions.svelte'
   import { noteName } from '../lib/notes.ts'
@@ -42,9 +41,6 @@
     themeButton.focus()
   }
 
-  function minimize() {
-    void getCurrentWindow().minimize().catch((error: unknown) => { workspace.error = `Could not minimize the window: ${String(error)}` })
-  }
   function changeMode(mode: Mode) {
     if (!workspace.active) return
     workspace.active.syncView?.()
@@ -98,5 +94,4 @@
     <button type="button" class="icon-button" bind:this={themeButton} aria-label="Choose theme" aria-expanded={appearance} aria-controls={appearance ? 'titlebar-appearance' : undefined} title="Choose theme" onclick={toggleAppearance}><ThemeIcon size={16} strokeWidth={1.6} /></button>
     {#if appearance}<div class="appearance-menu" id="titlebar-appearance"><ThemeOptions {theme} onChange={pick} compact /></div>{/if}
   </div>
-  {#if native}<button type="button" class="icon-button minimize-window" aria-label="Minimize window" title="Minimize window" onclick={minimize}><Minus size={16} strokeWidth={1.6} /></button>{/if}
 </header>

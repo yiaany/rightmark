@@ -80,7 +80,7 @@ In Dark, the title bar and sidebar share `#202020` and the canvas is `#1a1a1a`, 
 
 ## Layout
 
-The title bar is 44 px high and the sidebar is 224 px wide at the default macOS window size. Native traffic lights sit at the left; appearance and minimize sit at the right. The sidebar and title bar remain continuous. The workspace panel has a 12 px radius with a barely lighter hairline; the note body is at most 675 px wide.
+The title bar is 44 px high and the sidebar is 224 px wide at the default macOS window size. Native traffic lights and the sidebar toggle share the title bar's vertical centerline. The theme picker sits at the right; window minimization stays in the native traffic lights. The sidebar and title bar remain continuous. The workspace panel has a 12 px radius with a barely lighter hairline; the note body is at most 675 px wide.
 
 ## Components
 
