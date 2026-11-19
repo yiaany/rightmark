@@ -40,13 +40,10 @@ fn inbox_path(root: &Path, path: &str) -> Result<PathBuf, String> {
 }
 
 fn directory(root: &Path, folder: &str, create: bool) -> Result<PathBuf, String> {
-    let relative = Path::new(folder);
-    if !relative.components().all(
-        |part| matches!(part, Component::Normal(name) if !name.to_string_lossy().starts_with('.')),
-    ) {
+    if !folder.is_empty() && !folder.split('/').all(workspace_segment) {
         return Err("Invalid destination folder.".into());
     }
-    let path = root.join(relative);
+    let path = workspace_path(root, folder);
     if create {
         match fs::create_dir(&path) {
             Ok(()) => (),
@@ -77,7 +74,7 @@ fn stem(text: &str) -> String {
         .collect();
     let normalized = title.split_whitespace().collect::<Vec<_>>().join(" ");
     let title = normalized.trim_matches([' ', '.']);
-    if title.is_empty() {
+    if !workspace_segment(&format!("{title}.md")) || title.is_empty() {
         "Quick note".into()
     } else {
         title.into()

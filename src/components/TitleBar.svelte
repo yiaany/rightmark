@@ -5,6 +5,7 @@
   import ThemeSwitch from './ThemeSwitch.svelte'
   import { noteName } from '../lib/notes.ts'
   import { native } from '../lib/storage.ts'
+  import { windows } from '../lib/platform.ts'
   import type { Mode, Workspace } from '../lib/workspace.svelte.ts'
   import { displayShortcut, type Bindings } from '../lib/shortcuts.ts'
   import { noteHeadings } from '../lib/markdown.ts'
@@ -71,7 +72,7 @@
 
 <header class="titlebar" data-tauri-drag-region>
   <div class="titlebar-leading" data-tauri-drag-region>
-    <div class="window-controls" class:browser={!native} aria-hidden="true">{#if !native}<i></i><i></i><i></i>{/if}</div>
+    {#if !windows || !native}<div class="window-controls" class:browser={!native} aria-hidden="true">{#if !native}<i></i><i></i><i></i>{/if}</div>{/if}
     <button type="button" class="icon-button side-toggle" aria-label="Toggle sidebar" aria-expanded={sidebar} aria-controls="workspace-sidebar" data-tooltip="Toggle sidebar" data-tooltip-key={displayShortcut(keys.sidebar)} onclick={(event) => toggleSidebar(event.detail > 0)}><PanelLeft size={16} strokeWidth={1.6} /></button>
     {#if !sidebar}<button type="button" class="icon-button home-tab" aria-label="Home" aria-pressed={workspace.page === 'home'} data-tooltip="Home" onclick={() => workspace.show('home')}><House size={16} strokeWidth={1.6} /></button>{/if}
   </div>

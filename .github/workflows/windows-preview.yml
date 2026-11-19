@@ -1,0 +1,51 @@
+name: Windows preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [windows-preview]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install Rust stable (MSVC)
+        run: rustup toolchain install stable-x86_64-pc-windows-msvc --profile minimal --no-self-update
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - name: Build and test
+        env:
+          RUSTUP_TOOLCHAIN: stable-x86_64-pc-windows-msvc
+        run: |
+          npm run tauri -- build --ci --no-sign --target x86_64-pc-windows-msvc --bundles nsis -- --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test --locked --release --target x86_64-pc-windows-msvc --manifest-path src-tauri/Cargo.toml
+      - name: Installer checksum
+        run: |
+          $installer = Get-ChildItem 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe'
+          if (@($installer).Count -ne 1) { throw 'Expected one NSIS installer' }
+          $hash = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($installer.Name)" | Set-Content -Encoding ascii (Join-Path $installer.DirectoryName 'SHA256SUMS.txt')
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rightmark-windows-x64
+          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0

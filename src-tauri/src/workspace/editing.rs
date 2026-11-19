@@ -10,15 +10,16 @@ fn destination(root: &Path, relative: &str, create: bool) -> Result<PathBuf, Str
     {
         return Err("Enter a path inside the workspace.".into());
     }
-    let path = Path::new(relative);
-    validate_note_path(path)?;
+    validate_note_path(Path::new(relative))?;
+    let dest = workspace_path(root, relative);
     let mut parent = root.to_owned();
-    for segment in path
-        .parent()
-        .ok_or("Invalid destination folder.")?
-        .components()
+    for segment in relative
+        .rsplit_once('/')
+        .map(|(folder, _)| folder)
+        .into_iter()
+        .flat_map(|folder| folder.split('/'))
     {
-        parent.push(segment.as_os_str());
+        parent.push(segment);
         if create {
             match fs::create_dir(&parent) {
                 Ok(()) => (),
@@ -32,7 +33,7 @@ fn destination(root: &Path, relative: &str, create: bool) -> Result<PathBuf, Str
             return Err("Choose a regular folder inside the workspace.".into());
         }
     }
-    Ok(root.join(path))
+    Ok(dest)
 }
 
 fn stage(

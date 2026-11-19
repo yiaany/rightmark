@@ -5,16 +5,17 @@
   import { blockAt, moveBlock } from '../lib/block-move.ts'
   import { normalizeEditorLink } from '../lib/editor-link.ts'
   import { editorPalette, isEditorColor, type EditorColor } from '../lib/editor-palette.ts'
+  import { primaryShortcutLabel } from '../lib/shortcuts.ts'
 
   let { editor, x, y, above, revision, linkSource, close, element = $bindable() }: {
     editor: Editor; x: number; y: number; above: boolean; revision: number; linkSource: NonNullable<Parameters<typeof normalizeEditorLink>[1]>; close: () => void; element?: HTMLDivElement
   } = $props()
 
   const formats = [
-    { name: 'bold', label: 'Bold', shortcut: '⌘B', icon: Bold, run: (e: Editor) => e.chain().focus().toggleBold().run() },
-    { name: 'italic', label: 'Italic', shortcut: '⌘I', icon: Italic, run: (e: Editor) => e.chain().focus().toggleItalic().run() },
+    { name: 'bold', label: 'Bold', shortcut: primaryShortcutLabel('B'), icon: Bold, run: (e: Editor) => e.chain().focus().toggleBold().run() },
+    { name: 'italic', label: 'Italic', shortcut: primaryShortcutLabel('I'), icon: Italic, run: (e: Editor) => e.chain().focus().toggleItalic().run() },
     { name: 'strike', label: 'Strikethrough', icon: Strikethrough, run: (e: Editor) => e.chain().focus().toggleStrike().run() },
-    { name: 'underline', label: 'Underline', shortcut: '⌘U', icon: Underline, run: (e: Editor) => e.chain().focus().toggleUnderline().run() },
+    { name: 'underline', label: 'Underline', shortcut: primaryShortcutLabel('U'), icon: Underline, run: (e: Editor) => e.chain().focus().toggleUnderline().run() },
     { name: 'code', label: 'Inline code', icon: CodeXml, run: (e: Editor) => e.chain().focus().toggleCode().run() },
   ] as const
   const styles = [{ label: 'Regular Text', level: 0 }, { label: 'Title', level: 1 }, { label: 'Heading', level: 2 }, { label: 'Subheading', level: 3 }] as const

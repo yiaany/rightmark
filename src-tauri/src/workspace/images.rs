@@ -27,11 +27,11 @@ fn format(bytes: &[u8]) -> Option<&'static str> {
 fn regular_file(root: &Path, relative: &str) -> Result<PathBuf, String> {
     if relative
         .split('/')
-        .any(|part| part.is_empty() || part.starts_with('.') || part.contains(['\\', ':']))
+        .any(|part| !workspace_segment(part) || part.contains(':'))
     {
         return Err("Invalid image path.".into());
     }
-    let candidate = root.join(relative);
+    let candidate = workspace_path(root, relative);
     if candidate.canonicalize().map_err(message)? != candidate
         || !candidate.symlink_metadata().map_err(message)?.is_file()
     {
@@ -57,7 +57,7 @@ fn store(root: &Path, bytes: &[u8]) -> Result<String, String> {
         return Err("Attachments must be a regular workspace folder.".into());
     }
     let relative = format!("{DIRECTORY}/{:x}.{ext}", Sha256::digest(bytes));
-    let dest = root.join(&relative);
+    let dest = workspace_path(root, &relative);
     let mut temp = tempfile::NamedTempFile::new_in(&folder).map_err(message)?;
     temp.write_all(bytes).map_err(message)?;
     temp.as_file().sync_all().map_err(message)?;

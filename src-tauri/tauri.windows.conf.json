@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "rightmark",
+        "width": 1060,
+        "height": 720,
+        "minWidth": 680,
+        "minHeight": 480,
+        "dragDropEnabled": false,
+        "backgroundColor": "#141414"
+      },
+      {
+        "label": "capture",
+        "title": "Quick Capture",
+        "width": 664,
+        "height": 374,
+        "visible": false,
+        "focus": false,
+        "center": true,
+        "decorations": false,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "backgroundColor": "#141414"
+      }
+    ]
+  },
+  "bundle": {
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico"],
+    "windows": { "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true } }
+  }
+}

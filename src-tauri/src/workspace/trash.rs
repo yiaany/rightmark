@@ -84,7 +84,7 @@ fn move_to_trash(root: &Path, path: &str, expected: Option<&str>) -> Result<(), 
         .prefix("note-")
         .tempdir_in(dir)
         .map_err(message)?;
-    let dest = item.path().join(path);
+    let dest = workspace_path(item.path(), path);
     fs::create_dir_all(dest.parent().ok_or("Invalid note path.")?).map_err(message)?;
     fs::rename(&source, &dest).map_err(message)?;
     // From this point the item owns the only copy. Persist it, rather than cleaning up.
@@ -107,7 +107,7 @@ fn restore(root: &Path, dir: &Path, id: &str) -> Result<String, String> {
     let TrashItem { path, .. } = entry(dir, id)?;
     let base = dir.join(id);
     let source = note_path(&base, &path)?;
-    let dest = root.join(&path);
+    let dest = workspace_path(root, &path);
     let mut parent = root.to_owned();
     for component in Path::new(&path)
         .parent()

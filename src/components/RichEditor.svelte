@@ -10,6 +10,7 @@
   import { resolveNote, splitNote } from '../lib/notes.ts'
   import { wikiAttributes, wikiQuery } from '../lib/note-actions.ts'
   import { WikiPicker } from '../lib/wiki-picker.svelte.ts'
+  import { primaryShortcutLabel } from '../lib/shortcuts.ts'
   import WikiSuggestions from './WikiSuggestions.svelte'
   import type { DocumentSession, Workspace } from '../lib/workspace.svelte.ts'
 
@@ -88,9 +89,9 @@
   })
   const formatGroups = [
     [
-      { mark: 'bold', label: 'Bold', key: '⌘B', icon: Bold, run: (c: ChainedCommands) => c.toggleBold() },
-      { mark: 'italic', label: 'Italic', key: '⌘I', icon: Italic, run: (c: ChainedCommands) => c.toggleItalic() },
-      { mark: 'underline', label: 'Underline', key: '⌘U', icon: Underline, run: (c: ChainedCommands) => c.toggleUnderline() },
+      { mark: 'bold', label: 'Bold', key: primaryShortcutLabel('B'), icon: Bold, run: (c: ChainedCommands) => c.toggleBold() },
+      { mark: 'italic', label: 'Italic', key: primaryShortcutLabel('I'), icon: Italic, run: (c: ChainedCommands) => c.toggleItalic() },
+      { mark: 'underline', label: 'Underline', key: primaryShortcutLabel('U'), icon: Underline, run: (c: ChainedCommands) => c.toggleUnderline() },
       { mark: 'code', label: 'Inline code', key: '', icon: Code, run: (c: ChainedCommands) => c.toggleCode() },
     ], [
       { mark: 'bulletList', label: 'Bullet list', key: '', icon: List, run: (c: ChainedCommands) => c.toggleBulletList() },

@@ -1,4 +1,5 @@
 import { captureDefault, shortcutLabel } from './inbox.ts'
+import { windows } from './platform.ts'
 
 export const commands = {
   capture: 'Quick Capture', search: 'Search notes', newNote: 'New note', save: 'Save note', closeTab: 'Close note tab',
@@ -8,10 +9,13 @@ export const commands = {
 export type Command = keyof typeof commands
 export type Bindings = Record<Command, string>
 
-export const defaults: Bindings = {
+const macDefaults: Bindings = {
   capture: captureDefault, search: 'Command+K', newNote: 'Command+N', save: 'Command+S', closeTab: 'Command+W',
   sidebar: 'Shift+Command+B', home: '', inbox: '', tasks: '', graph: 'Shift+Command+G', settings: 'Command+,',
   source: 'Command+1', split: 'Command+2', preview: 'Command+3', trash: '', today: 'Shift+Command+D', template: '',
+}
+export function defaultBindings(onWindows = windows): Bindings {
+  return Object.fromEntries(Object.entries(macDefaults).map(([id, value]) => [id, onWindows ? windowsChord(value) : value])) as Bindings
 }
 
 const order = ['Control', 'Alt', 'Shift', 'Command']
@@ -21,6 +25,13 @@ const reserve = new Set(['Command+Q', 'Command+H', 'Alt+Command+H', 'Command+M',
 const localKey = /^[A-Z0-9,./;'\[\]\\`=\-]$|^F(?:[1-9]|1[0-9]|20)$|^(?:Arrow(?:Up|Down|Left|Right)|Enter|Space)$/
 const unassigned = Object.fromEntries(Object.keys(commands).map((id) => [id, ''])) as Bindings
 
+function windowsChord(value: string) {
+  const parts = value.replace('Command', 'Control').split('+')
+  return [...order.filter((part) => parts.slice(0, -1).includes(part)), parts.at(-1)].join('+')
+}
+const windowsReserve = new Set(['Control+A', 'Control+C', 'Control+V', 'Control+X', 'Control+Z', 'Control+Shift+Z', 'Control+Y', 'Control+B', 'Control+I', 'Control+U', 'Alt+F4'])
+export const defaults = defaultBindings()
+
 export function keyboardChord(event: KeyboardEvent) {
   const key = /^(?:Key|Digit)([A-Z0-9])$/.exec(event.code)?.[1] ?? codes[event.code] ?? event.code
   const modifiers = [event.ctrlKey && 'Control', event.altKey && 'Alt', event.shiftKey && 'Shift', event.metaKey && 'Command'].filter(Boolean)
@@ -28,18 +39,22 @@ export function keyboardChord(event: KeyboardEvent) {
   return [...modifiers, key].join('+')
 }
 
-export function displayShortcut(value: string) {
+export function displayShortcut(value: string, onWindows = windows) {
   const parts = value.split('+')
+  const windowsLabels: Record<string, string> = { Control: 'Ctrl', Command: 'Win', Enter: 'Enter' }
+  if (onWindows) return parts.map((key) => windowsLabels[key] ?? symbols[key] ?? key).join('+')
   return shortcutLabel(parts.map((key) => symbols[key] ?? key).join('+'))
 }
 
-export function shortcutIssue(command: Command, value: string, bindings: Bindings) {
+export const primaryShortcutLabel = (key: string) => displayShortcut(`${windows ? 'Control' : 'Command'}+${key}`)
+
+export function shortcutIssue(command: Command, value: string, bindings: Bindings, onWindows = windows) {
   if (!value) return command === 'capture' ? 'Quick Capture needs a global shortcut.' : ''
   const parts = value.split('+'), key = parts.pop() ?? ''
   if (!localKey.test(key) || !parts.length || parts.join('+') !== order.filter((m) => parts.includes(m)).join('+')) return 'Use a modifier with a letter, number, or special key.'
   if (command === 'capture' && (parts.length < 2 || !/^[A-Z0-9]$/.test(key))) return 'Use two or more modifiers and a letter or number for Quick Capture.'
   if (!parts.includes('Command') && !parts.includes('Control') && parts.length === 1 && !/^F\d+$/.test(key)) return 'Add Command or Control to avoid interfering with typing.'
-  if (reserve.has(value)) return 'That shortcut is reserved by macOS or the editor.'
+  if ((onWindows ? windowsReserve : reserve).has(value)) return 'That shortcut is reserved by the system or the editor.'
   const other = (Object.keys(commands) as Command[]).find((id) => id !== command && bindings[id] === value)
   return other ? `Already used by ${commands[other]}.` : ''
 }

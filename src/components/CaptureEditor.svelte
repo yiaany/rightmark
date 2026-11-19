@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { X } from '@lucide/svelte'
   import { getStorage } from '../lib/storage.ts'
+  import { primaryShortcutLabel } from '../lib/shortcuts.ts'
 
   let { dismiss, onSaved, standalone = false }: {
     dismiss: () => void | Promise<void>; onSaved: () => void; standalone?: boolean
@@ -50,6 +51,6 @@
   <textarea bind:this={field} aria-label="Quick note" placeholder="Write it down…" value={draft} readonly={pending} oninput={(event) => persist(event.currentTarget.value)}></textarea>
   {#if error}<p class="capture-error" role="alert">{error}</p>{/if}
   <footer>
-    <button type="submit" class="button primary comfortable" disabled={!draft.trim() || pending}>{pending ? 'Saving…' : 'Save'} <kbd class="keycap" aria-hidden="true">⌘↵</kbd></button>
+    <button type="submit" class="button primary comfortable" disabled={!draft.trim() || pending}>{pending ? 'Saving…' : 'Save'} <kbd class="keycap" aria-hidden="true">{primaryShortcutLabel('Enter')}</kbd></button>
   </footer>
 </form>

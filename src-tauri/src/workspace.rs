@@ -66,7 +66,7 @@ impl Store {
         let sample = data.join("Sample workspace");
         if !sample.exists() {
             for (relative, text) in SAMPLE {
-                let path = sample.join(relative);
+                let path = workspace_path(&sample, relative);
                 if let Some(parent) = path.parent() {
                     fs::create_dir_all(parent)?;
                 }
@@ -231,9 +231,8 @@ pub async fn create_note(app: AppHandle, key: String) -> Result<NoteInfo, String
 }
 
 fn note_path(root: &Path, relative: &str) -> Result<PathBuf, String> {
-    let relative = Path::new(relative);
-    validate_note_path(relative)?;
-    let path = root.join(relative);
+    validate_note_path(Path::new(relative))?;
+    let path = workspace_path(root, relative);
     let resolved = path.canonicalize().map_err(message)?;
     if path != resolved || !resolved.starts_with(root) || !resolved.is_file() {
         return Err("This note is outside the workspace or is a symbolic link.".into());
@@ -242,10 +241,62 @@ fn note_path(root: &Path, relative: &str) -> Result<PathBuf, String> {
 }
 
 fn validate_note_path(relative: &Path) -> Result<(), String> {
-    if !markdown(relative) || !relative.components().all(|part| matches!(part, Component::Normal(name) if !name.to_string_lossy().starts_with('.'))) {
+    if !markdown(relative)
+        || !relative
+            .to_str()
+            .is_some_and(|path| path.split('/').all(workspace_segment))
+    {
         return Err("Invalid Markdown file path.".into());
     }
     Ok(())
+}
+
+fn workspace_segment(part: &str) -> bool {
+    if part.is_empty()
+        || part.starts_with('.')
+        || part.contains('\\')
+        || part.chars().any(char::is_control)
+    {
+        return false;
+    }
+    // On Windows a colon can open an alternate stream and DOS device names are not files.
+    if cfg!(windows) {
+        if part.ends_with(['.', ' ']) || part.contains([':', '"', '<', '>', '|', '?', '*']) {
+            return false;
+        }
+        let stem = part
+            .split('.')
+            .next()
+            .unwrap_or_default()
+            .trim_end()
+            .to_ascii_uppercase();
+        if matches!(
+            stem.as_str(),
+            "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$"
+        ) || ["COM", "LPT"].iter().any(|prefix| {
+            stem.strip_prefix(prefix).is_some_and(|n| {
+                matches!(
+                    n,
+                    "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³"
+                )
+            })
+        }) {
+            return false;
+        }
+    }
+    true
+}
+
+// The frontend and stored relative paths always use '/'. Push one component at a time
+// so this also works under Windows' canonical (verbatim) workspace roots.
+fn workspace_path(root: &Path, relative: &str) -> PathBuf {
+    relative
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .fold(root.to_owned(), |mut path, segment| {
+            path.push(segment);
+            path
+        })
 }
 
 fn markdown(path: &Path) -> bool {
@@ -257,18 +308,26 @@ fn markdown(path: &Path) -> bool {
 }
 
 fn note_info(root: &Path, path: &Path) -> io::Result<NoteInfo> {
-    let path_string = path
+    let relative = path
         .strip_prefix(root)
         .ok()
-        .and_then(Path::to_str)
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid workspace path"))?;
+    let path_string = relative
+        .components()
+        .map(|part| match part {
+            Component::Normal(name) => name.to_str().filter(|name| workspace_segment(name)),
+            _ => None,
+        })
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid workspace path"))?
+        .join("/");
     let modified_at = fs::metadata(path)?
         .modified()
         .ok()
         .and_then(|modified| modified.duration_since(UNIX_EPOCH).ok())
         .map_or(0, |duration| duration.as_millis() as u64);
     Ok(NoteInfo {
-        path: path_string.to_owned(),
+        path: path_string,
         modified_at,
     })
 }
@@ -314,6 +373,26 @@ fn message(error: impl std::fmt::Display) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nested_note_paths_cross_the_api_with_forward_slashes() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().canonicalize().unwrap();
+        let path = workspace_path(&root, "Projects/Team/Plan.md");
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, "Plan").unwrap();
+        assert_eq!(
+            note_info(&root, &path).unwrap().path,
+            "Projects/Team/Plan.md"
+        );
+        assert_eq!(note_path(&root, "Projects/Team/Plan.md").unwrap(), path);
+        assert!(note_path(&root, "Projects\\Team\\Plan.md").is_err());
+        assert!(note_path(&root, "Projects//Team/Plan.md").is_err());
+        if cfg!(windows) {
+            assert!(!workspace_segment("CON.md"));
+            assert!(!workspace_segment("note.md:stream"));
+        }
+    }
 
     #[test]
     fn note_replacement_preserves_external_changes() {
