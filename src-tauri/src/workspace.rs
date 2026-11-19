@@ -11,7 +11,12 @@ use tauri_plugin_dialog::DialogExt;
 use walkdir::WalkDir;
 
 const MAX_NOTE_BYTES: u64 = 4 * 1024 * 1024;
+pub mod editing;
+pub mod images;
 pub mod inbox;
+pub mod recovery;
+pub mod revisions;
+pub mod trash;
 const SAMPLE: &[(&str, &str)] = &[
     ("Start here.md", include_str!("../../sample/Start here.md")),
     ("Scratchpad.md", include_str!("../../sample/Scratchpad.md")),
@@ -184,15 +189,15 @@ pub async fn write_note(
     text: String,
     expected: String,
 ) -> Result<(), String> {
-    let root = app.state::<Store>().active_root(&key)?;
     tauri::async_runtime::spawn_blocking(move || {
         let store = app.state::<Store>();
         let _guard = store
             .writes
             .lock()
             .map_err(|_| "File storage is unavailable.")?;
-        let path = note_path(&root, &path)?;
-        replace_note(&path, &text, &expected)
+        let root = store.lock_root(&key)?;
+        let file = note_path(&root, &path)?;
+        revisions::replace(&store, &root, &path, &file, &text, &expected)
     })
     .await
     .map_err(message)?
@@ -227,15 +232,20 @@ pub async fn create_note(app: AppHandle, key: String) -> Result<NoteInfo, String
 
 fn note_path(root: &Path, relative: &str) -> Result<PathBuf, String> {
     let relative = Path::new(relative);
-    if !markdown(relative) || !relative.components().all(|part| matches!(part, Component::Normal(name) if !name.to_string_lossy().starts_with('.'))) {
-        return Err("Invalid Markdown file path.".into());
-    }
+    validate_note_path(relative)?;
     let path = root.join(relative);
     let resolved = path.canonicalize().map_err(message)?;
     if path != resolved || !resolved.starts_with(root) || !resolved.is_file() {
         return Err("This note is outside the workspace or is a symbolic link.".into());
     }
     Ok(path)
+}
+
+fn validate_note_path(relative: &Path) -> Result<(), String> {
+    if !markdown(relative) || !relative.components().all(|part| matches!(part, Component::Normal(name) if !name.to_string_lossy().starts_with('.'))) {
+        return Err("Invalid Markdown file path.".into());
+    }
+    Ok(())
 }
 
 fn markdown(path: &Path) -> bool {
@@ -289,7 +299,9 @@ fn replace_note(path: &Path, text: &str, expected: &str) -> Result<(), String> {
     temp.write_all(text.as_bytes()).map_err(message)?;
     temp.as_file().sync_all().map_err(message)?;
     if read_text(path).map_err(message)? != expected {
-        return Err("This file changed outside Folio. Copy your edits before reopening it.".into());
+        return Err(
+            "This file changed outside rightmark. Copy your edits before reopening it.".into(),
+        );
     }
     temp.persist(path).map_err(message)?;
     Ok(())

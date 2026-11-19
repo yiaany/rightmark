@@ -1,5 +1,5 @@
 export type Note = { path: string; modifiedAt: number }
-export type Task = { path: string; line: number; label: string; checked: boolean }
+export type Task = { path: string; line: number; label: string; checked: boolean; due?: string; sourceLabel?: string }
 
 export const noteName = (path: string) => (path.split('/').at(-1) ?? path).replace(/\.(md|markdown)$/i, '')
 export const noteFolder = (path: string) => path.split('/').slice(0, -1).join('/')
@@ -30,8 +30,11 @@ export function scanTasks(path: string, text: string): Task[] {
     }
     if (fence) continue
     const match = checkbox.exec(line)
-    const label = match && line.slice(match[0].length).trim()
-    if (match && label) tasks.push({ path, line: index + offset, label, checked: match[2] !== ' ' })
+    const sourceLabel = match && line.slice(match[0].length).trim()
+    if (!match || !sourceLabel) continue
+    const date = /[ \t]+(?:📅[ \t]*|due:)(\d{4}-\d{2}-\d{2})$/u.exec(sourceLabel)
+    const due = date && validDate(date[1]) ? date[1] : undefined
+    tasks.push({ path, line: index + offset, label: due ? sourceLabel.slice(0, date!.index) : sourceLabel, checked: match[2] !== ' ', ...(due ? { due, sourceLabel } : {}) })
   }
   return tasks
 }
@@ -39,30 +42,98 @@ export function scanTasks(path: string, text: string): Task[] {
 export function toggleTask(text: string, task: Task): string | undefined {
   // Keep the rest of the file byte-for-byte, including the line endings.
   const current = scanTasks(task.path, text).find((item) => item.line === task.line)
-  if (!current || current.label !== task.label || current.checked !== task.checked) return
+  if (!current || current.label !== task.label || current.due !== task.due || current.checked !== task.checked) return
   const lines = text.split(/(\r?\n)/)
   lines[task.line * 2] = lines[task.line * 2].replace(checkbox, (_, prefix: string) => `${prefix}[${task.checked ? ' ' : 'x'}]`)
   return lines.join('')
 }
 
-export function resolveNote(target: string, from: string, notes: Note[]): string | undefined {
-  const path = target.split('#')[0].trim()
-  if (!path) return from
-  const canonical = (value: string) => value.normalize('NFC').toLocaleLowerCase().replace(/\.(md|markdown)$/i, '')
-  const requested = canonical(path)
-  const relative = [noteFolder(from), path].filter(Boolean).join('/').split('/').reduce<string[]>((parts, part) => {
-    if (part === '..') parts.pop()
-    else if (part && part !== '.') parts.push(part)
-    return parts
-  }, []).join('/')
-  const exact = notes.find((note) => canonical(note.path) === canonical(relative)) ??
-    notes.find((note) => canonical(note.path) === requested)
-  if (exact) return exact.path
-  const matches = notes.filter((note) => canonical(noteName(note.path)) === requested)
-  return matches.length === 1 ? matches[0].path : undefined
+export function setTaskDue(text: string, task: Task, date: string): string | undefined {
+  if (date && !validDate(date)) return
+  const current = scanTasks(task.path, text).find((item) => item.line === task.line)
+  if (!current || current.label !== task.label || current.due !== task.due || current.checked !== task.checked) return
+  if (date === (current.due ?? '')) return text
+  const lines = text.split(/(\r?\n)/), line = lines[task.line * 2]
+  const end = line.trimEnd().length
+  const marker = current.due ? /[ \t]+(?:📅[ \t]*|due:)\d{4}-\d{2}-\d{2}$/u.exec(line.slice(0, end)) : undefined
+  lines[task.line * 2] = line.slice(0, marker?.index ?? end) + (date ? ` 📅 ${date}` : '') + line.slice(end)
+  return lines.join('')
 }
 
-export type SearchMatch = { from: number; to: number; text: string }
+export function appendTask(text: string, title: string, due = '') {
+  const label = title.trim()
+  if (!label || /[\r\n]/.test(label)) throw new Error('Enter a task on one line.')
+  if (due && !validDate(due)) throw new Error('Enter a valid due date.')
+  const { body } = splitNote(text)
+  const newline = text.includes('\r\n') ? '\r\n' : '\n'
+  const separator = (!body && (!text || text === '\uFEFF')) || text.endsWith(newline.repeat(2)) ? '' : text.endsWith(newline) ? newline : newline.repeat(2)
+  const prefix = text + separator
+  const next = `${prefix}- [ ] ${label}${due ? ` 📅 ${due}` : ''}${newline}`
+  if (!scanTasks('', next).some((task) => task.line === sourcePosition(prefix, prefix.length).lineNumber - 1)) {
+    throw new Error('Close the unfinished code block or comment before adding a task to this note.')
+  }
+  return next
+}
+
+export function localDate(date = new Date()) {
+  return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+export function validDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith('0000')) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  return Number.isFinite(+date) && date.toISOString().slice(0, 10) === value
+}
+
+export const taskTiming = (task: Task, today: string) => !task.checked && task.due ? task.due < today ? 'Overdue' : task.due === today ? 'Today' : undefined : undefined
+
+export const pathKey = (value: string) => value.normalize('NFC').toLowerCase()
+const stemKey = (value: string) => pathKey(value).replace(/\.(md|markdown)$/i, '')
+
+export function noteResolver(notes: Note[]) {
+  const direct = new Map<string, string | null>(), stems = new Map<string, string | null>(), names = new Map<string, string | null>()
+  function add(map: Map<string, string | null>, key: string, path: string) { map.set(key, map.has(key) ? null : path) }
+  for (const { path } of notes) {
+    add(direct, pathKey(path), path)
+    add(stems, stemKey(path), path)
+    add(names, pathKey(noteName(path)), path)
+  }
+  function exact(path: string) {
+    return /\.(md|markdown)$/i.test(path) ? direct.get(pathKey(path)) : stems.get(stemKey(path))
+  }
+  return (target: string, from: string): string | undefined => {
+    const path = target.split('#')[0].trim()
+    if (!path) return from
+    if (path.startsWith('/')) return exact(path.slice(1)) ?? undefined
+    const parts = noteFolder(from).split('/').filter(Boolean)
+    for (const part of path.split('/')) {
+      if (part === '..') { if (!parts.length) return; parts.pop() }
+      else if (part && part !== '.') parts.push(part)
+    }
+    const local = exact(parts.join('/'))
+    if (local !== undefined || /^\.{1,2}(?:\/|$)/.test(path)) return local ?? undefined
+    const rooted = exact(path)
+    if (rooted !== undefined) return rooted ?? undefined
+    const named = names.get(stemKey(path))
+    return named && (!/\.(md|markdown)$/i.test(path) || pathKey(named).endsWith(pathKey(path))) ? named : undefined
+  }
+}
+
+export function resolveNote(target: string, from: string, notes: Note[]) { return noteResolver(notes)(target, from) }
+
+export type SearchMatch = { from: number; to: number; text: string; taskOrdinal?: number; exact?: boolean; link?: { kind: 'wiki' | 'markdown'; target: string; ordinal: number } }
+
+export function taskLocation(text: string, task: Task): SearchMatch | undefined {
+  const tasks = scanTasks(task.path, text)
+  const taskOrdinal = tasks.findIndex(({ line, label, due }) => line === task.line && label === task.label && due === task.due)
+  if (taskOrdinal < 0) return
+  let start = 0
+  for (let index = 0; index < task.line; index++) start = text.indexOf('\n', start) + 1
+  const end = text.indexOf('\n', start)
+  const line = text.slice(start, end < 0 ? undefined : end)
+  const from = start + line.lastIndexOf(task.sourceLabel ?? task.label)
+  return { from, to: from + task.label.length, text: task.label, taskOrdinal }
+}
 type SearchExcerpt = { before: string; match: string; after: string }
 export type SearchResult = Note & { rank: number; excerpt?: SearchExcerpt; match?: SearchMatch }
 

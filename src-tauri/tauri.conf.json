@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Folio",
+  "productName": "rightmark",
   "version": "0.1.0",
   "identifier": "com.yiaany.folio",
   "build": {
@@ -10,24 +10,26 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "label": "main",
-        "title": "Folio",
+        "title": "rightmark",
         "width": 1060,
         "height": 720,
         "minWidth": 680,
         "minHeight": 480,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
+        "dragDropEnabled": false,
         "trafficLightPosition": { "x": 17, "y": 24 },
-        "backgroundColor": "#202020"
+        "backgroundColor": "#141414"
       },
       {
         "label": "capture",
         "title": "Quick Capture",
-        "width": 522,
-        "height": 282,
+        "width": 664,
+        "height": 374,
         "visible": false,
         "focus": false,
         "center": true,
@@ -36,7 +38,7 @@
         "alwaysOnTop": true,
         "visibleOnAllWorkspaces": true,
         "skipTaskbar": true,
-        "backgroundColor": "#252525"
+        "transparent": true
       }
     ],
     "security": {

@@ -7,12 +7,13 @@ import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
-import { wikiPattern, visualBlockReason, visualInputBlockReason } from './markdown.ts'
+import { wikiLabel, wikiPattern, visualBlockReason, visualInputBlockReason } from './markdown.ts'
 import { splitNote } from './notes.ts'
 import { smoothCaret } from './smooth-caret.ts'
 import { blockDrag } from './block-drag.ts'
 import { colorMarks } from './editor-color-marks.ts'
 import { editorSearch } from './editor-search.ts'
+import { hydrateImages, localImagePath } from './attachments.ts'
 
 const WikiLink = Node.create({
   name: 'wikiLink',
@@ -24,7 +25,7 @@ const WikiLink = Node.create({
   },
   parseHTML() { return [] },
   renderHTML({ node }) {
-    return ['a', { href: '#', 'data-wiki': node.attrs.target, contenteditable: 'false' }, node.attrs.label || node.attrs.target.split('/').at(-1)]
+    return ['a', { href: '#', 'data-wiki': node.attrs.target, contenteditable: 'false', draggable: 'false' }, node.attrs.label || wikiLabel(node.attrs.target)]
   },
   markdownTokenizer: {
     name: 'wikiLink',
@@ -39,7 +40,7 @@ const WikiLink = Node.create({
   renderMarkdown: (node) => `[[${node.attrs?.target}${node.attrs?.label ? `|${node.attrs.label}` : ''}]]`,
 })
 
-export function createVisualEditor(element: HTMLElement, text: string, onChange: (text: string) => void, onSelection: () => void) {
+export function createVisualEditor(element: HTMLElement, text: string, onChange: (text: string) => void, onSelection: () => void, images?: { path: string; read: (path: string) => Promise<ArrayBuffer> }) {
   const { body, frontmatter } = splitNote(text)
   const inputReason = visualInputBlockReason(body)
   let pending: ReturnType<typeof setTimeout> | undefined
@@ -47,16 +48,29 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
     element,
     extensions: [
       StarterKit.configure({
-        link: { openOnClick: false, enableClickSelection: false },
+        link: { openOnClick: false, enableClickSelection: false, HTMLAttributes: { draggable: 'false' } },
       }),
       Markdown,
       ...colorMarks,
       WikiLink,
       TaskList,
       TaskItem.configure({ nested: true }),
-      Image,
+      images ? Image.extend({
+        addNodeView() {
+          return ({ node }) => {
+            const dom = document.createElement('img')
+            dom.draggable = false
+            if (localImagePath(node.attrs.src)) dom.dataset.localImage = node.attrs.src
+            else if (/^https?:\/\//i.test(node.attrs.src)) dom.src = node.attrs.src
+            dom.alt = node.attrs.alt ?? ''
+            if (node.attrs.title) dom.title = node.attrs.title
+            const destroy = hydrateImages(dom, images.path, images.read)
+            return { dom, destroy, ignoreMutation: () => true }
+          }
+        },
+      }) : Image,
       TableKit,
-      Placeholder.configure({ placeholder: 'Start writing…' }),
+      Placeholder.configure({ placeholder: 'Type / for commands' }),
       smartInputRules,
       smoothCaret,
       blockDrag,
@@ -69,7 +83,7 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
     editorProps: {
       attributes: {
         'aria-label': 'Write note', role: 'textbox', 'aria-multiline': 'true',
-        spellcheck: 'false', autocorrect: 'off', autocapitalize: 'off', autocomplete: 'off',
+        spellcheck: String(document.documentElement.dataset.editorSpellcheck === 'on'), autocorrect: 'off', autocapitalize: 'off', autocomplete: 'off',
       },
       // Markdown is the storage format. Do not admit HTML that has no Markdown form.
       clipboardTextParser: (content, _context, _plain, view) => {
@@ -82,7 +96,7 @@ export function createVisualEditor(element: HTMLElement, text: string, onChange:
     onUpdate: ({ editor }) => {
       if (!editor.isEditable) return
       clearTimeout(pending)
-      pending = setTimeout(flush, 90)
+      pending = setTimeout(flush, 35)
     },
     onTransaction: onSelection,
   })

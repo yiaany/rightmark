@@ -16,7 +16,7 @@ export function colorMarkup(spec: ColorSpec, color: EditorColor, content: string
   return `<${spec.tag} ${spec.attr}="${color}">${content}</${spec.tag}>`
 }
 
-// Folio's inline HTML carries a palette key, never arbitrary CSS or attributes.
+// Inline annotations carry a palette key, never arbitrary CSS or attributes.
 export function isColorTag(text: string) {
   return colorSpecs.some((spec) => text === `</${spec.tag}>` || readColorOpening(spec, text)?.raw === text)
 }

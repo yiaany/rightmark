@@ -1,6 +1,23 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { findText, moveTab, resolveNote, scanTasks, searchNotes, sourcePosition, splitNote, toggleTask } from '../src/lib/notes.ts'
+import { appendTask, findText, moveTab, resolveNote, scanTasks, searchNotes, sourcePosition, splitNote, taskLocation, toggleTask } from '../src/lib/notes.ts'
+
+test('appending tasks preserves existing Markdown, CRLF, and Unicode', () => {
+  const prior = '---\r\ntags: things\r\n---\r\n\r\n- [x] Previous\r\n'
+  const next = appendTask(prior, '  Plan the rollout 🚀  ', '2026-11-20')
+  assert.equal(next, prior + '\r\n- [ ] Plan the rollout 🚀 📅 2026-11-20\r\n')
+  const task = scanTasks('Tasks.md', next).at(-1)
+  assert.equal(task?.label, 'Plan the rollout 🚀')
+  assert.equal(task?.due, '2026-11-20')
+  assert.equal(appendTask('', 'Plain task'), '- [ ] Plain task\n')
+})
+
+test('appending a task does not silently insert it into an unclosed fenced block or comment', () => {
+  assert.throws(() => appendTask('```md\ntext', 'Plan the rollout'), /unfinished/)
+  assert.throws(() => appendTask('<!--\ntext', 'Plan the rollout'), /unfinished/)
+  assert.throws(() => appendTask('', 'Not\na line'), /one line/)
+  assert.throws(() => appendTask('', 'Task', '2026-02-30'), /due date/)
+})
 
 test('toggling a checkbox preserves frontmatter, fences and CRLF', () => {
   const text = '---\r\ntitle: Tasks\r\n---\r\n```md\r\n- [ ] Example\r\n```\r\n> - [X] Review proof\r\n'
@@ -13,6 +30,15 @@ test('toggling a checkbox preserves frontmatter, fences and CRLF', () => {
 test('frontmatter only applies at the start of a note', () => {
   assert.equal(splitNote('First\n---\nSecond\n---\n').frontmatter, '')
   assert.deepEqual(splitNote('---\na: 1\n---\n\nHello'), { frontmatter: '---\na: 1\n---\n', body: '\nHello' })
+})
+
+test('task navigation addresses the chosen checkbox, even if its label is repeated', () => {
+  const text = '---\r\ntitle: Notes\r\n---\r\nRepeat\r\n- [ ] Repeat\r\n- [ ] Repeat\r\n'
+  const tasks = scanTasks('Notes.md', text)
+  const hit = taskLocation(text, tasks[1])!
+  assert.equal(hit.taskOrdinal, 1)
+  assert.equal(text.slice(hit.from, hit.to), 'Repeat')
+  assert.deepEqual(sourcePosition(text, hit.from), { lineNumber: 6, column: 7 })
 })
 
 test('links prefer a sibling and never choose between ambiguous short names', () => {

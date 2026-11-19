@@ -1,17 +1,18 @@
 <script lang="ts">
-  import { ArrowUpRight, FileText, FolderOpen, Plus } from '@lucide/svelte'
+  import { ArrowUpRight, FileText, FolderOpen, LayoutTemplate, Plus } from '@lucide/svelte'
   import { noteFolder, noteName } from '../lib/notes.ts'
   import type { Workspace } from '../lib/workspace.svelte.ts'
 
-  let { workspace }: { workspace: Workspace } = $props()
+  let { workspace, templates }: { workspace: Workspace; templates: () => void } = $props()
 </script>
 
 <div class="home-scroll">
   <section class="home-content" aria-labelledby="home-title">
-    <h1 id="home-title">Welcome to Folio</h1>
+    <h1 id="home-title">Welcome to rightmark</h1>
     <div class="home-actions">
-      <button class="button primary" type="button" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}><FolderOpen size={15} strokeWidth={1.7} />Open folder</button>
-      <button class="button secondary" type="button" disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={15} strokeWidth={1.7} />New note</button>
+      <button class="button primary comfortable" type="button" disabled={workspace.busy} onclick={() => void workspace.chooseFolder()}><FolderOpen size={16} strokeWidth={1.65} />Open folder</button>
+      <button class="button secondary comfortable" type="button" disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={16} strokeWidth={1.65} />New note</button>
+      <button class="button quiet comfortable" type="button" disabled={workspace.busy} onclick={templates}><LayoutTemplate size={16} strokeWidth={1.65} />From template</button>
     </div>
     <div class="recent-section">
       <div class="recent-heading"><h2>Recent notes</h2></div>

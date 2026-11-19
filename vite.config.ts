@@ -4,6 +4,6 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [svelte()],
   clearScreen: false,
-  server: { port: 1420, strictPort: true },
+  server: { port: 1420, strictPort: true, watch: { ignored: ['**/src-tauri/**'] } },
   build: { target: 'safari16' },
 })

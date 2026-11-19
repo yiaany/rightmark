@@ -3,11 +3,13 @@
   import { Link2, Unlink2 } from '@lucide/svelte'
   import RichEditor from './RichEditor.svelte'
   import SourceEditor from './SourceEditor.svelte'
+  import Backlinks from './Backlinks.svelte'
   import { renderNote } from '../lib/markdown.ts'
   import { followLink } from '../lib/links.ts'
-  import type { DocumentSession } from '../lib/workspace.svelte.ts'
+  import { hydrateImages } from '../lib/attachments.ts'
+  import type { DocumentSession, Workspace } from '../lib/workspace.svelte.ts'
 
-  let { document, onChange, onLink }: { document: DocumentSession; onChange: (text: string) => void; onLink: (target: string) => void } = $props()
+  let { document, workspace, onChange, onLink }: { document: DocumentSession; workspace: Workspace; onChange: (text: string) => void; onLink: (target: string) => void } = $props()
   let preview: HTMLDivElement | undefined = $state()
   let previewText = $state('')
   let linked = $state(false)
@@ -15,6 +17,7 @@
   let source: ((fraction: number) => void) | undefined
   let scrollTarget: number | undefined
   let panes: HTMLDivElement | undefined = $state()
+  $effect(() => { if (preview) return hydrateImages(preview, document.path, (path) => workspace.readImage(document.key, path)) })
 
   $effect(() => {
     if (document.mode !== 'split') return
@@ -53,12 +56,12 @@
 </script>
 
 {#if document.mode === 'preview'}
-  <RichEditor {document} {onChange} {onLink} onSource={() => { document.mode = 'editor' }} />
+  <RichEditor {document} {workspace} {onChange} {onLink} onSource={() => { document.mode = 'editor' }} />
 {:else}
   <div class="editor-panes" class:is-split={document.mode === 'split'} bind:this={panes} style:grid-template-columns={document.mode === 'split' ? `minmax(0, ${split}fr) 7px minmax(0, ${100 - split}fr)` : 'minmax(0, 1fr)'}>
     <section class="source-pane" aria-label="Source pane">
       {#if document.mode === 'split'}<div class="pane-label">Markdown</div>{/if}
-      <SourceEditor {document} {onChange} onScroll={fromSource} connect={(go) => { source = go }} />
+      <SourceEditor {document} {workspace} {onChange} {onLink} onScroll={fromSource} connect={(go) => { source = go }} />
     </section>
     {#if document.mode === 'split'}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions (the window splitter pattern is keyboard operable) -->
@@ -79,3 +82,4 @@
     {/if}
   </div>
 {/if}
+<Backlinks {workspace} path={document.path} />

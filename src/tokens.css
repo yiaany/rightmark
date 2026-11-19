@@ -1,0 +1,142 @@
+@font-face {
+  font-family: Inter;
+  src: url('../assets/fonts/InterVariable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Inter;
+  src: url('../assets/fonts/InterVariable-Italic.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  /* Surfaces, ordered from the frame to floating UI. */
+  --chrome: #141414;
+  --document-canvas: #171717;
+  --canvas: #191919;
+  --surface: #202020;
+  --overlay: #242424;
+  --ink-panel: #111111;
+  --line: #2e2e2e;
+  --edge: #3a3a3a;
+  --panel-edge: #252525;
+  --ink: #eeedea;
+  --body: #d8d7d3;
+  --muted: #a5a39e;
+  --icon: #aeaca6;
+
+  /* Hover, press, checked, and current are different states. */
+  --hover: #292929;
+  --press: #3c3c3c;
+  --control-on: #373735;
+  --control-on-edge: #4a4945;
+  --selected: #2c2c2c;
+  --selected-edge: #373737;
+  --selection: #454545;
+  --accent: #e0dfda;
+  --link: #fff;
+  --focus: #fff;
+  --search-match-bg: #404040;
+  --search-match-ink: #fff;
+  --command-checkbox: #eeedea;
+  --command-checkbox-ink: #171717;
+
+  --action: #ecebe7;
+  --action-hover: #faf9f5;
+  --action-press: #d1d0cb;
+  --action-text: #1d1d1b;
+  --disabled-ink: #8d8b86;
+  --disabled-fill: #30302e;
+  --danger: #ffb1a9;
+  --danger-bg: #302423;
+  --danger-line: #56403b;
+  --shade: rgb(0 0 0 / 55%);
+  --shadow: 0 6px 20px rgb(0 0 0 / 36%);
+  --shadow-dialog: 0 16px 48px rgb(0 0 0 / 52%), 0 3px 10px rgb(0 0 0 / 26%);
+  --graph-line: #989898;
+  --graph-node: #b4b4b4;
+  --graph-orphan: #777;
+  --graph-grid: #aaa;
+
+  --ui: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', var(--emoji-font), sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --emoji-font: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+  --type-key: 11px/16px var(--ui);
+  --type-caption: 12px/18px var(--ui);
+  --type-control: 13px/20px var(--ui);
+  --type-nav: 14px/20px var(--ui);
+  --type-body: 16px/26px var(--ui);
+  --type-subheading: 18px/26px var(--ui);
+  --type-heading: 23px/30px var(--ui);
+  --type-page: 30px/36px var(--ui);
+  --type-title: 36px/42px var(--ui);
+  --track-heading: -.025em;
+  --track-caption: .01em;
+
+  --size-icon: 28px;
+  --size-control: 32px;
+  --size-action: 36px;
+  --control-radius: 7px;
+  --row-radius: 8px;
+  --popover-radius: 12px;
+  --dialog-radius: 14px;
+  --ink-radius: 18px;
+  --workspace-corner: 12px;
+  --title-height: 44px;
+  --sidebar-width: 248px;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-theme: cubic-bezier(.4, 0, .2, 1);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --chrome: #f0efec;
+  --document-canvas: #fff;
+  --canvas: #fcfcfa;
+  --surface: #f4f3f0;
+  --overlay: #fff;
+  --ink-panel: #fdfcf9;
+  --line: #e4e2dd;
+  --edge: #d5d3ce;
+  --panel-edge: #e0ded9;
+  --ink: #232320;
+  --body: #393936;
+  --muted: #63615b;
+  --icon: #66645e;
+  --hover: #e9e7e3;
+  --press: #d5d3ce;
+  --control-on: #e5e2db;
+  --control-on-edge: #ccc8be;
+  --selected: #e5e3df;
+  --selected-edge: #d8d5ce;
+  --selection: #e0dfdb;
+  --accent: #464540;
+  --link: #242424;
+  --focus: #242424;
+  --search-match-bg: #e7e5e0;
+  --search-match-ink: #242424;
+  --command-checkbox: #282826;
+  --command-checkbox-ink: #fff;
+  --action: #292924;
+  --action-hover: #3b3a35;
+  --action-press: #171715;
+  --action-text: #fdfcf8;
+  --disabled-ink: #74716a;
+  --disabled-fill: #e8e6e1;
+  --danger: #8e2925;
+  --danger-bg: #fff0ed;
+  --danger-line: #edc9c3;
+  --shade: rgb(31 28 22 / 30%);
+  --shadow: 0 6px 20px rgb(36 32 23 / 12%);
+  --shadow-dialog: 0 16px 48px rgb(36 32 23 / 23%), 0 3px 10px rgb(36 32 23 / 9%);
+  --graph-line: #707070;
+  --graph-node: #575757;
+  --graph-orphan: #8b8b8b;
+  --graph-grid: #555;
+}

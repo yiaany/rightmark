@@ -1,23 +1,14 @@
 import { noteLinks } from './markdown.ts'
-import { noteFolder, noteName, type Note } from './notes.ts'
+import { noteName, noteResolver, type Note } from './notes.ts'
 
 export type GraphNote = { id: string; title: string; incoming: number }
 export type GraphLink = { source: string; target: string }
 export type NoteGraph = { nodes: GraphNote[]; links: GraphLink[] }
 
-function key(path: string) {
-  return path.normalize('NFC').toLocaleLowerCase().replace(/\.(md|markdown)$/i, '')
-}
-
 export function buildGraph(notes: Note[], text: ReadonlyMap<string, string>, cache = new Map<string, { text: string; links: string[] }>()): NoteGraph {
-  const paths = new Map<string, GraphNote>()
-  const names = new Map<string, GraphNote | null>()
   const nodes = notes.map(({ path }) => ({ id: path, title: noteName(path), incoming: 0 }))
-  for (const node of nodes) {
-    paths.set(key(node.id), node)
-    const name = key(node.title)
-    names.set(name, names.has(name) ? null : node)
-  }
+  const paths = new Map(nodes.map((node) => [node.id, node]))
+  const resolve = noteResolver(notes)
 
   const links: GraphLink[] = []
   for (const node of nodes) {
@@ -28,14 +19,7 @@ export function buildGraph(notes: Note[], text: ReadonlyMap<string, string>, cac
     cache.set(node.id, { text: body, links: targets })
     const seen = new Set<string>()
     for (const raw of targets) {
-      const target = raw.split('#')[0].trim()
-      if (!target) continue
-      const parts = target.startsWith('/') ? [] : noteFolder(node.id).split('/').filter(Boolean)
-      for (const part of target.split('/')) {
-        if (part === '..') parts.pop()
-        else if (part && part !== '.') parts.push(part)
-      }
-      const found = paths.get(key(parts.join('/'))) ?? paths.get(key(target.replace(/^\//, ''))) ?? names.get(key(target))
+      const found = paths.get(resolve(raw, node.id) ?? '')
       if (!found || found === node || seen.has(found.id)) continue
       seen.add(found.id)
       found.incoming++

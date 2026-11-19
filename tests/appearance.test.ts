@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { effectiveTheme, parseTheme } from '../src/lib/appearance.ts'
 
-test('unconfigured or invalid appearance uses Folio Dark', () => {
+test('unconfigured or invalid appearance uses Dark', () => {
   assert.equal(parseTheme(null), 'dark')
   assert.equal(parseTheme('invalid'), 'dark')
   assert.equal(parseTheme('light'), 'light')

@@ -5,15 +5,24 @@
 
   let { dark, change }: { dark: boolean; change: (theme: 'light' | 'dark') => void } = $props()
   let transition: ViewTransition | undefined
+  let requested: 'dark' | 'light' | undefined
+  let fallbackTimer: ReturnType<typeof setTimeout> | undefined
   let animateIcon = $state(false)
   const maskId = 'folio-theme-moon'
   const rays = Array.from({ length: 8 }, (_, index) => index * 45)
 
   function toggle(event: MouseEvent) {
-    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
     const root = document.documentElement
-    const animate = event.detail > 0 && !matchMedia('(prefers-reduced-motion: reduce)').matches
-    const apply = () => flushSync(() => { animateIcon = animate; change(next) })
+    const next = (requested ?? root.dataset.theme) === 'dark' ? 'light' : 'dark'
+    const animate = event.detail > 0 && root.dataset.themeMotion !== 'off' && !matchMedia('(prefers-reduced-motion: reduce)').matches
+    const apply = () => flushSync(() => { requested = undefined; animateIcon = animate; change(next) })
+    const fallback = () => {
+      root.setAttribute('data-theme-fade', '')
+      apply()
+      fallbackTimer = setTimeout(() => root.removeAttribute('data-theme-fade'), 420)
+    }
+    clearTimeout(fallbackTimer)
+    if (!animate) root.removeAttribute('data-theme-fade')
 
     if (transition) {
       transition.skipTransition()
@@ -22,7 +31,8 @@
       apply()
       return
     }
-    if (!animate || typeof document.startViewTransition !== 'function') { apply(); return }
+    if (!animate) { apply(); return }
+    if (typeof document.startViewTransition !== 'function') { fallback(); return }
 
     const rect = (event.currentTarget as HTMLButtonElement).getBoundingClientRect()
     const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2
@@ -31,17 +41,19 @@
     root.style.setProperty('--reveal-radius', `${radius}px`)
     root.setAttribute('data-theme-reveal', '')
     try {
+      requested = next
       const active = document.startViewTransition(() => { if (transition === active) apply() })
       transition = active
       void active.ready.catch(() => {})
       void active.finished.catch(() => {}).finally(() => {
         if (transition !== active) return
         transition = undefined
+        requested = undefined
         root.removeAttribute('data-theme-reveal')
       })
     } catch {
       root.removeAttribute('data-theme-reveal')
-      apply()
+      fallback()
     }
   }
 </script>

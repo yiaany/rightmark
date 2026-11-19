@@ -6,8 +6,8 @@
   import { normalizeEditorLink } from '../lib/editor-link.ts'
   import { editorPalette, isEditorColor, type EditorColor } from '../lib/editor-palette.ts'
 
-  let { editor, x, y, above, revision, close, element = $bindable() }: {
-    editor: Editor; x: number; y: number; above: boolean; revision: number; close: () => void; element?: HTMLDivElement
+  let { editor, x, y, above, revision, linkSource, close, element = $bindable() }: {
+    editor: Editor; x: number; y: number; above: boolean; revision: number; linkSource: NonNullable<Parameters<typeof normalizeEditorLink>[1]>; close: () => void; element?: HTMLDivElement
   } = $props()
 
   const formats = [
@@ -22,14 +22,15 @@
   const colorModes = [{ id: 'textColor', label: 'Text color' }, { id: 'highlight', label: 'Highlight' }] as const
   let popup = $state<'style' | 'link' | 'more' | ColorMode>()
   let width = $state(0)
+  let height = $state(42)
   let palette = $state<HTMLDivElement>()
   let input = $state<HTMLInputElement>()
   let url = $state('')
   let error = $state('')
   let center = $derived(Math.max(width / 2 + 8, Math.min(x, window.innerWidth - width / 2 - 8)))
   let paletteOpen = $derived(popup === 'textColor' || popup === 'highlight')
-  let roomAbove = $derived((above ? y - 38 : y) - 13)
-  let roomBelow = $derived(window.innerHeight - (above ? y : y + 38) - 13)
+  let roomAbove = $derived((above ? y - height : y) - 13)
+  let roomBelow = $derived(window.innerHeight - (above ? y : y + height) - 13)
   let popupAbove = $derived(roomBelow < (paletteOpen ? 382 : 130) && roomAbove > roomBelow)
   let paletteHeight = $derived(Math.max(0, Math.floor(popupAbove ? roomAbove : roomBelow)))
   let current = $derived.by(() => {
@@ -76,8 +77,8 @@
 
   function saveLink(event: SubmitEvent) {
     event.preventDefault()
-    const href = normalizeEditorLink(url)
-    if (!href) { error = 'Enter a valid URL or Markdown path.'; return }
+    const href = normalizeEditorLink(url, linkSource)
+    if (!href) { error = 'Enter a note name, Markdown path, or valid URL.'; return }
     popup = undefined
     editor.chain().focus().setLink({ href }).run()
   }
@@ -118,7 +119,7 @@
   }
 </script>
 
-<div class="selection-toolbar" class:above class:popup-above={popupAbove} bind:this={element} bind:offsetWidth={width} style:left="{center}px" style:top="{y}px" role="toolbar" tabindex="-1" aria-label="Text formatting" onkeydown={onKey}>
+<div class="selection-toolbar" class:above class:popup-above={popupAbove} bind:this={element} bind:offsetWidth={width} bind:offsetHeight={height} style:left="{center}px" style:top="{y}px" role="toolbar" tabindex="-1" aria-label="Text formatting" onkeydown={onKey}>
   <button type="button" class="text-style-button" aria-label="Text style" data-tooltip="Text style" aria-expanded={popup === 'style'} onmousedown={preserve} onclick={() => void toggle('style')}>Aa <ChevronDown size={11} /></button>
   <span class="selection-separator" aria-hidden="true"></span>
   {#each formats as format (format.name)}
@@ -144,7 +145,7 @@
     <form class="selection-popover selection-link" onsubmit={saveLink}>
       <label for="selection-link-url">Link address</label>
       <div>
-        <input id="selection-link-url" aria-invalid={!!error} bind:this={input} bind:value={url} oninput={() => { error = '' }} placeholder="https://… or Note.md" spellcheck={false} autocorrect="off" autocapitalize="off" autocomplete="off" />
+        <input id="selection-link-url" aria-invalid={!!error} bind:this={input} bind:value={url} oninput={() => { error = '' }} placeholder="Note name or URL" spellcheck={false} autocorrect="off" autocapitalize="off" autocomplete="off" />
         <button type="submit">Apply</button>
       </div>
       {#if error}<p role="alert">{error}</p>{/if}

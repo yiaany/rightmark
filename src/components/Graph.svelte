@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte'
   import { Focus, Minus, Plus, SlidersHorizontal } from '@lucide/svelte'
+  import Dropdown from './Dropdown.svelte'
   import { buildGraph, filterGraph } from '../lib/graph.ts'
   import { mountGraph } from '../lib/graph-canvas.ts'
   import { noteFolder, noteName } from '../lib/notes.ts'
@@ -51,15 +52,12 @@
       <summary data-tooltip="Graph settings" aria-label="Graph settings"><SlidersHorizontal size={15} strokeWidth={1.55} /></summary>
       <div>
         {#if local}
-          <label>Depth <select bind:value={depth}><option value={1}>1</option><option value={2}>2</option><option value={3}>3</option></select></label>
+          <div class="graph-depth"><span>Depth</span><Dropdown label="Graph depth" value={String(depth)} options={[1, 2, 3].map((n) => ({ value: String(n), label: String(n) }))} onChange={(value) => { depth = Number(value) }} /></div>
         {:else}
           <label><input type="checkbox" bind:checked={orphans} /> Show unlinked notes</label>
         {/if}
         {#if visible.nodes.length}
-          <label class="graph-jump">Open note <select value="" onchange={(event) => { if (event.currentTarget.value) void workspace.open(event.currentTarget.value) }}>
-            <option value="" disabled>Choose a note…</option>
-            {#each visible.nodes as node (node.id)}<option value={node.id}>{node.title}{noteFolder(node.id) ? ` — ${noteFolder(node.id)}` : ''}</option>{/each}
-          </select></label>
+          <div class="graph-jump"><span>Open note</span><Dropdown label="Open graph note" placeholder="Choose a note…" stretch searchable options={visible.nodes.map((node) => ({ value: node.id, label: node.title, detail: noteFolder(node.id) || 'Workspace' }))} onChange={(value) => void workspace.open(value)} /></div>
         {/if}
       </div>
     </details>
@@ -96,10 +94,10 @@
   .graph-settings { position: relative; }
   .graph-settings summary { list-style: none; width: 30px; height: 29px; justify-content: center; color: var(--muted); cursor: pointer; }
   .graph-settings summary::-webkit-details-marker { display: none; }
-  .graph-settings > div { position: absolute; top: calc(100% + 7px); right: 0; width: 212px; padding: 9px 10px; border: 1px solid var(--edge); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow); }
+  .graph-settings > div { position: absolute; top: calc(100% + 7px); right: 0; width: 212px; padding: 9px 10px; border: 1px solid var(--edge); border-radius: var(--popover-radius); background: var(--ink-panel); box-shadow: var(--shadow); }
   .graph-settings label { display: flex; align-items: center; gap: 8px; color: var(--body); font-size: 12px; }
-  .graph-settings .graph-jump { align-items: stretch; flex-direction: column; border-top: 1px solid var(--line); margin-top: 9px; padding-top: 9px; gap: 5px; }
-  select { max-width: 100%; font: inherit; color: var(--ink); background: var(--canvas); border: 1px solid var(--edge); border-radius: 4px; padding: 3px; }
+  .graph-depth { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .graph-settings .graph-jump { display: grid; border-top: 1px solid var(--line); margin-top: 9px; padding-top: 9px; gap: 5px; }
   .graph-camera { position: absolute; bottom: 17px; right: 17px; }
   .graph-camera .fit-graph { margin-left: 2px; }
   .graph-caption { position: absolute; bottom: 17px; left: 21px; padding: 5px 8px; color: var(--body); max-width: calc(100% - 140px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; pointer-events: none; background: var(--canvas); border: 1px solid var(--line); border-radius: 6px; }

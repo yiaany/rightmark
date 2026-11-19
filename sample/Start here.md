@@ -1,6 +1,6 @@
 # Start here
 
-Folio opens a folder of Markdown files. This is a sample workspace: change anything here, or open a folder of your own from Home.
+rightmark opens a folder of Markdown files. This is a sample workspace: change anything here, or open a folder of your own from Home.
 
 ## Write the way you want
 

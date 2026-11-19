@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { Inbox, X } from '@lucide/svelte'
+  import { X } from '@lucide/svelte'
   import { getStorage } from '../lib/storage.ts'
 
-  let { destination, dismiss, onSaved, standalone = false }: {
-    destination: string; dismiss: () => void | Promise<void>; onSaved: () => void; standalone?: boolean
+  let { dismiss, onSaved, standalone = false }: {
+    dismiss: () => void | Promise<void>; onSaved: () => void; standalone?: boolean
   } = $props()
   const draftKey = 'folio:quick-capture-draft:v1'
   function loadDraft() { try { return localStorage.getItem(draftKey) ?? '' } catch { return '' } }
@@ -50,7 +50,6 @@
   <textarea bind:this={field} aria-label="Quick note" placeholder="Write it down…" value={draft} readonly={pending} oninput={(event) => persist(event.currentTarget.value)}></textarea>
   {#if error}<p class="capture-error" role="alert">{error}</p>{/if}
   <footer>
-    <span class="capture-destination"><Inbox size={15} strokeWidth={1.6} /><span>{destination}</span></span>
-    <button type="submit" class="button primary" disabled={!draft.trim() || pending}>{pending ? 'Saving…' : 'Save to Inbox'} <kbd>⌘↵</kbd></button>
+    <button type="submit" class="button primary comfortable" disabled={!draft.trim() || pending}>{pending ? 'Saving…' : 'Save'} <kbd class="keycap" aria-hidden="true">⌘↵</kbd></button>
   </footer>
 </form>

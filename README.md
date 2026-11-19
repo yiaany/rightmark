@@ -1,27 +1,33 @@
-# Folio
+<div align="center">
+  <img src="public/rightmark.svg" alt="rightmark app icon" width="104" height="104">
+  <h1>rightmark</h1>
+  <p><strong>A quiet place to write. A folder you own.</strong></p>
+  <p>Write, connect ideas, and keep track of what’s next in a local Markdown workspace for Mac.</p>
+  <a href="https://github.com/yiaany/rightmark/releases/download/v0.1.0/rightmark_0.1.0_aarch64.dmg"><img src="https://img.shields.io/badge/Download-macOS_preview-242424?style=for-the-badge&amp;logo=apple&amp;logoColor=white" alt="Download the macOS preview"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-EDECE6?style=for-the-badge&amp;labelColor=55544e&amp;color=eeedea" alt="MIT license"></a>
+  <p><sub>Apple silicon · macOS 13 or later · No account required</sub></p>
+</div>
 
-Folio is a small local Markdown workspace for macOS. Open a folder, switch between visual editing and source, and keep track of Markdown checkboxes without moving them into a database.
+<img src="docs/media/workspace.webp" alt="rightmark in Dark mode, showing a project note with a Markdown checklist, open tabs, and the workspace’s file tree" width="1440">
 
-In Preview, type `/` on an empty line to insert headings, lists, tables, quotes, code, or dividers. Tables stay in the Markdown file. Open **Graph** from the sidebar or with `⌘⇧G` to browse the folder's internal links, or choose **Local** after opening a note. Change appearance in **Settings** (`⌘,`) or from the title bar.
+## From a passing thought to work you can return to
 
-Select text in Preview for inline formatting, links, text color, and highlights. The two annotations are independent and stored in Markdown as inline `<span data-folio-color="…">` and `<mark data-folio-highlight="…">` with palette keys. Hover beside a paragraph or list item and drag its handle to reorder it among siblings. `Option–Shift–↑ / ↓` moves the current block without a mouse.
+**Catch it before it’s gone.** Press <kbd>⌃</kbd><kbd>⇧</kbd><kbd>N</kbd> from any app while rightmark is running. Sort the thought in Inbox later, or use Today to keep a daily record.
 
-Press `Control–Shift–N` from any Mac app while Folio is running, or choose **Quick Capture** in the menu bar. `Command–Return` saves to `Inbox/`; `Escape` hides the window without deleting the draft. The shortcut can be changed in Settings. From Inbox, keep a capture as a note, add it to an existing note, make it a task, or archive it. Undo restores the last processed item if the destination has not changed. Captures saved before choosing a folder are kept in the local Inbox and remain visible after switching to a personal folder.
+**Write without the syntax in your way.** Edit the formatted page, look at the Markdown, or put both side by side. Paste a screenshot, link a note with `[[`, and jump to a heading or the exact place another note mentions it.
 
-Use `Command–K` to search filenames, folders, and note text. An excerpt highlights the first match, and opening it jumps to that text in the document. Matches only visible in raw Markdown open in Editor mode.
+**Keep the work with the notes.** A checkbox in a meeting note is the same checkbox you see in Tasks. Search across the folder with <kbd>⌘</kbd><kbd>K</kbd> and pick up where you left off when you reopen the app.
 
-## Development
+## Your notes are already files
 
-Use Node.js 22.18 or later, Rust, and the macOS command-line developer tools. Install the locked dependencies with `npm ci`. Use `npm run tauri -- dev` for the native app or `npm run dev` for an isolated browser demo. The demo uses browser storage and never reads or changes your local folders.
+Open a folder you already have. The notes stay as `.md` files, and screenshots live beside them in an `Attachments/` folder. You can open those files in another editor, back them up, or take the folder with you. Local drafts and version history help when a save is interrupted or a file changes elsewhere.
 
-`npm run check` checks the TypeScript and Svelte code. `npm test` runs the workspace tests. `cargo test --manifest-path src-tauri/Cargo.toml` tests native file storage. `npm run tauri -- build --bundles app` creates the local macOS app bundle; builds from this repository are unsigned.
+## Try rightmark
 
-See [DESIGN.md](DESIGN.md) for the window layout and interaction details. The macOS app icon is generated from `assets/folio-icon.svg` with the Tauri CLI.
+1. Download the [Apple silicon preview](https://github.com/yiaany/rightmark/releases/tag/v0.1.0).
+2. Open the disk image and drag **rightmark** to **Applications**.
+3. Try the sample workspace or choose **Open folder** to start with your own notes.
 
-## Storage
+> This preview is not notarized. macOS may block it on first launch. Only try it if you’re comfortable testing a pre-release build, and use a copy of important notes.
 
-The selected folder is the source of truth. Existing `.md` and `.markdown` files are read in place. The sample workspace is stored separately in Folio's application data directory. Original Markdown remains readable without Folio. The application compares the saved revision before replacing a note and refuses to overwrite an external change. Visual editing is limited to Markdown the editor can safely represent; source mode remains available for any supported file.
-
-## License
-
-Folio's source and artwork are MIT-licensed. Markpad (BSD-3-Clause) and Novel (Apache-2.0) are interaction references, not vendored code. Runtime dependencies retain their own licenses.
+[Workspace guide](docs/WORKSPACE.md) · [Design](DESIGN.md) · [Contributing](CONTRIBUTING.md) · [Releases](https://github.com/yiaany/rightmark/releases)

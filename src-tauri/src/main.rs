@@ -3,7 +3,7 @@
 mod capture;
 mod workspace;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 fn main() {
     tauri::Builder::default()
@@ -22,12 +22,26 @@ fn main() {
             workspace::list_notes,
             workspace::read_note,
             workspace::write_note,
+            workspace::recovery::load_drafts,
+            workspace::recovery::save_draft,
+            workspace::recovery::clear_draft,
+            workspace::images::save_image,
+            workspace::images::read_image,
             workspace::create_note,
+            workspace::editing::create_named_note,
+            workspace::editing::move_snapshot,
+            workspace::editing::move_note,
+            workspace::revisions::list_versions,
+            workspace::revisions::read_version,
             workspace::inbox::capture_note,
             workspace::inbox::list_inbox,
             workspace::inbox::read_inbox,
             workspace::inbox::process_inbox,
             workspace::inbox::undo_inbox,
+            workspace::trash::list_trash,
+            workspace::trash::trash_note,
+            workspace::trash::restore_note,
+            workspace::trash::delete_trashed_note,
             capture::open_capture,
             capture::hide_capture,
             capture::capture_shortcut,
@@ -43,8 +57,17 @@ fn main() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("could not start Folio")
+        .expect("could not start rightmark")
         .run(|_app, event| {
+            if let tauri::RunEvent::ExitRequested {
+                code: None, api, ..
+            } = &event
+            {
+                if _app.get_webview_window("main").is_some() {
+                    api.prevent_exit();
+                    let _ = _app.emit_to("main", "folio-quit", ());
+                }
+            }
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Reopen {
                 has_visible_windows: false,

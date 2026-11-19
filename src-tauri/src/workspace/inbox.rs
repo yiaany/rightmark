@@ -195,6 +195,7 @@ fn make_task(text: &str) -> String {
 }
 
 fn process(
+    data: &Path,
     root: &Path,
     origin: &Path,
     key: String,
@@ -233,7 +234,10 @@ fn process(
                 "{previous}{separator}{}",
                 original.trim_start_matches(['\r', '\n'])
             );
-            replace_note(&to, &after, &previous)?;
+            if after != previous {
+                revisions::snapshot(data, root, &target, &previous)?;
+                replace_note(&to, &after, &previous)?;
+            }
             before = Some(previous);
             target
         }
@@ -267,7 +271,7 @@ fn process(
     if let Err(error) = remove {
         return match revert_destination(root, &receipt) {
             Ok(()) => Err(error),
-            Err(_) => Err(format!("{error} Check both Inbox and the destination: the original was not removed by Folio.")),
+            Err(_) => Err(format!("{error} Check both Inbox and the destination: the original was not removed by rightmark.")),
         };
     }
     Ok(receipt)
@@ -299,7 +303,7 @@ pub async fn process_inbox(
         let root = store.lock_root(&key)?;
         let origin = if local { &store.sample } else { &*root };
         let mut undo = store.undo_inbox.lock().map_err(message)?;
-        let receipt = process(&root, origin, key, path, expected, action)?;
+        let receipt = process(&store.data, &root, origin, key, path, expected, action)?;
         let destination = receipt.destination.clone();
         *undo = Some(receipt);
         Ok(destination)
@@ -319,6 +323,13 @@ pub async fn undo_inbox(app: AppHandle, key: String) -> Result<String, String> {
             .as_ref()
             .filter(|receipt| receipt.key == key)
             .ok_or("Nothing to undo in this workspace.")?;
+        if receipt.before.is_some() {
+            let dest = note_path(&root, &receipt.destination)?;
+            if read_text(&dest).map_err(message)? != receipt.after {
+                return Err("The destination note changed. Nothing was undone.".into());
+            }
+            revisions::snapshot(&store.data, &root, &receipt.destination, &receipt.after)?;
+        }
         let folder = directory(&receipt.origin, "Inbox", true)?;
         let path = folder.join(receipt.source.rsplit('/').next().unwrap_or_default());
         let mut temp = tempfile::NamedTempFile::new_in(folder).map_err(message)?;
@@ -349,6 +360,7 @@ mod tests {
         let target = root.join("Notes.md");
         fs::write(&target, "Existing\r\n").unwrap();
         let receipt = process(
+            &root.join(".test-data"),
             &root,
             &root,
             "test".into(),

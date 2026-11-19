@@ -38,6 +38,7 @@ export function mountTooltips(doc: Document) {
       tip.textContent = text
       if (next.dataset.tooltipKey) {
         const key = doc.createElement('kbd')
+        key.className = 'keycap'
         key.textContent = next.dataset.tooltipKey
         tip.append(key)
       }

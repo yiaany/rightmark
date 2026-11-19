@@ -15,9 +15,18 @@ export const smoothCaret = Extension.create({
         let frame = 0
         let prior: { x: number; y: number } | undefined
         let glide: Animation | undefined
+        let blink: Animation | undefined
+
+        function restartBlink() {
+          blink?.cancel()
+          if (document.documentElement.dataset.caretBlink !== 'off') {
+            blink = caret.animate([{ opacity: 1, easing: 'steps(1, end)' }, { opacity: 0, offset: 0.58 }, { opacity: 0 }], { duration: 1060, iterations: Infinity })
+          }
+        }
 
         function hide() {
           glide?.cancel()
+          blink?.cancel()
           prior = undefined
           caret.hidden = true
           native.classList.remove('draw-caret')
@@ -25,7 +34,7 @@ export const smoothCaret = Extension.create({
 
         function refresh() {
           const selection = view.state.selection
-          if (motion.matches || !view.editable || !view.hasFocus() || view.composing || !selection.empty || !(selection instanceof TextSelection)) {
+          if (!document.hasFocus() || !view.editable || !view.hasFocus() || view.composing || !selection.empty || !(selection instanceof TextSelection)) {
             hide()
             return
           }
@@ -36,8 +45,9 @@ export const smoothCaret = Extension.create({
             return
           }
           const x = Math.round(rect.left), y = Math.round(rect.top)
+          restartBlink()
           if (prior?.x === x && prior.y === y && !caret.hidden) return
-          const previous = prior && caret.getBoundingClientRect()
+          const previous = !motion.matches && prior && caret.getBoundingClientRect()
           glide?.cancel()
           prior = { x, y }
           caret.hidden = false
@@ -59,6 +69,10 @@ export const smoothCaret = Extension.create({
         native.addEventListener('compositionend', schedule)
         window.addEventListener('scroll', reset, true)
         window.addEventListener('resize', reset)
+        window.addEventListener('blur', hide)
+        window.addEventListener('focus', schedule)
+        const preference = new MutationObserver(reset)
+        preference.observe(document.documentElement, { attributeFilter: ['data-caret-blink'] })
         motion.addEventListener('change', reset)
         hide()
         return {
@@ -73,6 +87,9 @@ export const smoothCaret = Extension.create({
             native.removeEventListener('compositionend', schedule)
             window.removeEventListener('scroll', reset, true)
             window.removeEventListener('resize', reset)
+            window.removeEventListener('blur', hide)
+            window.removeEventListener('focus', schedule)
+            preference.disconnect()
             motion.removeEventListener('change', reset)
             hide()
             caret.remove()

@@ -34,13 +34,13 @@ pub fn setup(app: &AppHandle, data: PathBuf) -> tauri::Result<()> {
         previous: Mutex::new(None),
     });
 
-    let show = MenuItem::with_id(app, "folio-show", "Open Folio", true, None::<&str>)?;
+    let show = MenuItem::with_id(app, "folio-show", "Open rightmark", true, None::<&str>)?;
     let note = MenuItem::with_id(app, "folio-capture", "Quick Capture", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "folio-quit", "Quit Folio", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "folio-quit", "Quit rightmark", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&note, &show, &quit])?;
     let mut tray = TrayIconBuilder::new()
         .menu(&menu)
-        .tooltip("Folio")
+        .tooltip("rightmark")
         .on_menu_event(|app, event| match event.id().as_ref() {
             "folio-capture" => {
                 let _ = open_capture(app.clone());
