@@ -1,0 +1,52 @@
+name: Deliver the verified v0.1.1 preview
+
+on:
+  push:
+    branches: [release-delivery/v0.1.1]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  deliver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_SHA: 9e2b27ec9b702e4f15cb4a42145405109da3e585
+      MAC_SHA: 06c083ed0e93f5d0bfb19ac1d925bad16a85d542ea73e20df5dd9bb779d48715
+    steps:
+      - name: Verify the build and draft
+        id: draft
+        run: |
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/44797549397")
+          jq -e --arg sha "$RELEASE_SHA" '.head_sha == $sha and .conclusion == "success"' <<< "$run"
+          draft=$(gh api "repos/$GITHUB_REPOSITORY/releases" | jq -ce --arg sha "$RELEASE_SHA" --arg mac "sha256:$MAC_SHA" '.[] | select(.tag_name == "v0.1.1" and .draft and .prerelease and .target_commitish == $sha and any(.assets[]; .name == "rightmark_0.1.1_aarch64.dmg" and .digest == $mac))')
+          echo "id=$(jq -r .id <<< "$draft")" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 44797549397
+          name: rightmark-windows-x64
+          path: verified-windows
+      - name: Upload the Windows installer and publish
+        env:
+          RELEASE_ID: ${{ steps.draft.outputs.id }}
+        run: |
+          cd verified-windows
+          exe=rightmark_0.1.1_x64-setup.exe
+          win_sha=$(sha256sum "$exe" | cut -d ' ' -f 1)
+          test "$(tr -d '\r' < SHA256SUMS.txt)" = "$win_sha  $exe"
+          printf '%s  rightmark_0.1.1_aarch64.dmg\n%s  %s\n' "$MAC_SHA" "$win_sha" "$exe" > SHA256SUMS.txt
+          release="repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID"
+          for asset in "$exe" SHA256SUMS.txt; do
+            digest="sha256:$(sha256sum "$asset" | cut -d ' ' -f 1)"
+            if ! gh api "$release" | jq -e --arg name "$asset" --arg digest "$digest" 'any(.assets[]; .name == $name and .digest == $digest)' >/dev/null; then
+              gh api --method POST -H 'Content-Type: application/octet-stream' "https://uploads.github.com/$release/assets?name=$asset" --input "$asset" | jq -e --arg digest "$digest" '.digest == $digest and .state == "uploaded"'
+            fi
+          done
+          gh api --method PATCH "$release" -F draft=false -F prerelease=true --jq .html_url
