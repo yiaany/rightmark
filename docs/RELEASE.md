@@ -1,9 +1,9 @@
-# macOS release checklist
+# Release checklist
 
 ## Build and distribution
 
-Produce the local release artifacts with `npm run tauri -- build --ci --bundles app,dmg`.
-Attach the `.dmg` and its SHA-256 checksum to the GitHub release. Do not commit generated application bundles or installers.
+Build Apple silicon macOS and Windows x64 from the same source commit. Use `npm run tauri -- build --ci --bundles app,dmg` on Mac and the **Windows preview** workflow (dispatch it for the release commit) for Windows.
+Publish both installers and one `SHA256SUMS.txt` on a single GitHub release. Verify each installer against its source commit and checksum before publishing. Do not commit generated application bundles or installers.
 
 - Run the Svelte/TypeScript check, the JavaScript and Rust tests, and `git diff --check` from a release commit.
 - Build an optimized Tauri release, not a debug bundle. Build an Apple Silicon `.dmg` for the first release; build and verify an Intel or universal artifact separately before claiming Intel support. Keep the `com.yiaany.folio` identifier to preserve existing data.
@@ -13,6 +13,7 @@ Attach the `.dmg` and its SHA-256 checksum to the GitHub release. Do not commit 
 ## Native release gates
 
 Use copies of real workspaces. Repeat on macOS 13 and a current macOS release before advertising that range.
+On Windows, follow the [Windows smoke test](WINDOWS.md#before-publishing). Keep unsigned builds marked as public previews.
 
 1. Create headings (including duplicates) and open Outline. Check exact jumps in Preview, Editor, and Split, with keyboard and pointer.
 2. Paste an actual screenshot from the macOS clipboard, drop two files from Finder, and select an image via the picker. Reopen the note offline in each view. Move it to another folder and verify its Markdown still resolves the image. Check unsupported formats and oversized files.

@@ -19,4 +19,4 @@ The installer is under `src-tauri/target/x86_64-pc-windows-msvc/release/bundle/n
 
 On an actual Windows machine, install and launch from the Start menu. Open a test folder with non-ASCII names and nested notes. Check **Ctrl+K** search, **Ctrl+Shift+N** global capture, Inbox actions, task editing, image paste and drop, note move and restore, app relaunch, and uninstall. Verify the workspace is not removed on uninstall. Add Windows code signing before a stable public release.
 
-Publish an unsigned build only as a Windows prerelease. Tag the tested `windows-release` commit separately from the macOS tag (for example `v0.1.0-windows.1`), and attach the x64 NSIS installer and `SHA256SUMS.txt`. State that the installer is unsigned and targets Windows 11 x64. Do not commit these generated files.
+Publish an unsigned build only as a prerelease. Attach the Windows installer and macOS disk image from the same commit to a single GitHub release, with a combined `SHA256SUMS.txt`. State that the Windows installer is unsigned and targets Windows 11 x64. Do not commit the generated files.

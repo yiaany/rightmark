@@ -4,7 +4,7 @@
 
 ## Platform
 
-macOS desktop. The browser demo is for development and uses isolated storage.
+macOS and Windows desktop. The browser demo is for development and uses isolated storage.
 
 ## Stack
 
