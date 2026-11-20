@@ -1,7 +1,8 @@
 <script lang="ts">
   import { tick } from 'svelte'
   import { flip } from 'svelte/animate'
-  import { Check, ChevronDown, CodeXml, Eye, History, House, ImagePlus, ListTree, PanelLeft, Plus, Search, Smile, SquarePen, SquareSplitHorizontal, X } from '@lucide/svelte'
+  import { getCurrentWindow } from '@tauri-apps/api/window'
+  import { Check, ChevronDown, CodeXml, Eye, History, House, ImagePlus, ListTree, Minus, PanelLeft, Plus, Search, Smile, Square, SquarePen, SquareSplitHorizontal, X } from '@lucide/svelte'
   import ThemeSwitch from './ThemeSwitch.svelte'
   import { noteName } from '../lib/notes.ts'
   import { native } from '../lib/storage.ts'
@@ -13,6 +14,8 @@
   let { workspace, sidebar, toggleSidebar, search, capture, captureButton, history, openEmoji, openOutline, pickImages, keys, appliedTheme, onTheme }: {
     workspace: Workspace; sidebar: boolean; toggleSidebar: (animate: boolean) => void; search: () => void; capture: () => void; captureButton: boolean; history: (path: string) => void; openEmoji: () => void; openOutline: () => void; pickImages: () => void; keys: Bindings; appliedTheme: 'light' | 'dark'; onTheme: (theme: 'light' | 'dark') => void
   } = $props()
+  const desktopWindow = windows && native ? getCurrentWindow() : undefined
+  let maximized = $state(false)
   let dragged = $state('')
   const modes = [{ id: 'editor', label: 'Editor', icon: CodeXml }, { id: 'split', label: 'Split', icon: SquareSplitHorizontal }, { id: 'preview', label: 'Preview', icon: Eye }] as const
   const view = $derived(modes.find(({ id }) => id === workspace.currentDocument?.mode) ?? modes[2])
@@ -20,6 +23,13 @@
   let viewRoot = $state<HTMLDivElement>(), viewButton = $state<HTMLButtonElement>(), viewMenu = $state<HTMLDivElement>()
 
   $effect(() => { workspace.page; workspace.currentDocument; viewOpen = false })
+  $effect(() => {
+    if (!desktopWindow) return
+    const syncMaximized = () => { void desktopWindow.isMaximized().then((value) => { maximized = value }).catch(console.error) }
+    const listener = desktopWindow.onResized(syncMaximized)
+    syncMaximized()
+    return () => { void listener.then((unlisten) => unlisten()).catch(console.error) }
+  })
 
   async function openViews() {
     workspace.currentDocument?.syncView?.()
@@ -70,11 +80,55 @@
 
 <svelte:window onpointerdown={(event) => { if (viewOpen && viewRoot && !event.composedPath().includes(viewRoot)) viewOpen = false }} />
 
-<header class="titlebar" data-tauri-drag-region>
+{#snippet sidebarToggle()}
+  <button type="button" class="icon-button side-toggle" aria-label="Toggle sidebar" aria-expanded={sidebar} aria-controls="workspace-sidebar" data-tooltip="Toggle sidebar" data-tooltip-key={displayShortcut(keys.sidebar)} onclick={(event) => toggleSidebar(event.detail > 0)}><PanelLeft size={16} strokeWidth={1.6} /></button>
+{/snippet}
+
+{#snippet homeButton()}
+  <button type="button" class="icon-button home-tab" aria-label="Home" aria-pressed={workspace.page === 'home'} data-tooltip="Home" onclick={() => workspace.show('home')}><House size={16} strokeWidth={1.6} /></button>
+{/snippet}
+
+{#snippet newNoteButton()}
+  <button type="button" class="icon-button tab-add" aria-label="New note" data-tooltip="New note" data-tooltip-key={displayShortcut(keys.newNote)} disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={16} strokeWidth={1.6} /></button>
+{/snippet}
+
+{#snippet quickActions()}
+  <button type="button" class="icon-button top-search" aria-label="Quick search" data-tooltip="Quick search" data-tooltip-key={displayShortcut(keys.search)} onclick={search}><Search size={16} strokeWidth={1.6} /></button>
+  <ThemeSwitch dark={appliedTheme === 'dark'} change={onTheme} />
+{/snippet}
+
+{#snippet captureAction()}
+  {#if captureButton}<button type="button" class="icon-button" aria-label="Quick Capture" data-tooltip="Quick Capture" data-tooltip-key={displayShortcut(keys.capture)} onclick={capture}><SquarePen size={16} strokeWidth={1.6} /></button>{/if}
+{/snippet}
+
+<div class="titlebar-stack" class:windows-titlebar={!!desktopWindow}>
+{#if desktopWindow}
+  <header class="titlebar window-bar" data-tauri-drag-region>
+    {@render sidebarToggle()}
+    {#if !sidebar}
+      {@render homeButton()}
+      {@render newNoteButton()}
+    {/if}
+    <div class="drag-space" data-tauri-drag-region></div>
+    {@render captureAction()}
+    {@render quickActions()}
+    <div class="window-actions" role="group" aria-label="Window controls">
+      <button type="button" class="icon-button" aria-label="Minimize window" data-tooltip="Minimize window" onclick={() => void desktopWindow.minimize().catch(console.error)}><Minus size={15} strokeWidth={1.6} /></button>
+      <button type="button" class="icon-button" aria-label={maximized ? 'Restore window' : 'Maximize window'} data-tooltip={maximized ? 'Restore window' : 'Maximize window'} onclick={() => void desktopWindow.toggleMaximize().catch(console.error)}>
+        {#if maximized}<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" aria-hidden="true"><path d="M6 5V2.5h7.5V10H11"/><rect x="2.5" y="5" width="8.5" height="8.5" rx="1"/></svg>{:else}<Square size={13} strokeWidth={1.7} />{/if}
+      </button>
+      <button type="button" class="icon-button window-close" aria-label="Close window" data-tooltip="Close window" onclick={() => void desktopWindow.close().catch(console.error)}><X size={15} strokeWidth={1.6} /></button>
+    </div>
+  </header>
+{/if}
+{#if !desktopWindow || workspace.tabs.length || workspace.currentDocument}
+<header class="titlebar" class:windows-tabs={!!desktopWindow} data-tauri-drag-region>
   <div class="titlebar-leading" data-tauri-drag-region>
-    {#if !windows || !native}<div class="window-controls" class:browser={!native} aria-hidden="true">{#if !native}<i></i><i></i><i></i>{/if}</div>{/if}
-    <button type="button" class="icon-button side-toggle" aria-label="Toggle sidebar" aria-expanded={sidebar} aria-controls="workspace-sidebar" data-tooltip="Toggle sidebar" data-tooltip-key={displayShortcut(keys.sidebar)} onclick={(event) => toggleSidebar(event.detail > 0)}><PanelLeft size={16} strokeWidth={1.6} /></button>
-    {#if !sidebar}<button type="button" class="icon-button home-tab" aria-label="Home" aria-pressed={workspace.page === 'home'} data-tooltip="Home" onclick={() => workspace.show('home')}><House size={16} strokeWidth={1.6} /></button>{/if}
+    {#if !desktopWindow}
+      <div class="window-controls" class:browser={!native} aria-hidden="true">{#if !native}<i></i><i></i><i></i>{/if}</div>
+      {@render sidebarToggle()}
+      {#if !sidebar}{@render homeButton()}{/if}
+    {/if}
   </div>
   <div class="titlebar-document" data-tauri-drag-region>
     <div class="tab-strip" role="group" aria-label="Open notes">
@@ -92,7 +146,7 @@
         </div>
       {/each}
     </div>
-    {#if workspace.tabs.length || !sidebar}<button type="button" class="icon-button tab-add" aria-label="New note" data-tooltip="New note" data-tooltip-key={displayShortcut(keys.newNote)} disabled={workspace.busy} onclick={() => void workspace.create()}><Plus size={16} strokeWidth={1.6} /></button>{/if}
+    {#if sidebar ? workspace.tabs.length : !desktopWindow}{@render newNoteButton()}{/if}
     <div class="drag-space" data-tauri-drag-region></div>
     {#if workspace.currentDocument}
       <div class="view-picker" bind:this={viewRoot}>
@@ -119,8 +173,8 @@
         {/if}
       </div>
     {/if}
-    {#if captureButton}<button type="button" class="icon-button" aria-label="Quick Capture" data-tooltip="Quick Capture" data-tooltip-key={displayShortcut(keys.capture)} onclick={capture}><SquarePen size={16} strokeWidth={1.6} /></button>{/if}
-    <button type="button" class="icon-button top-search" aria-label="Quick search" data-tooltip="Quick search" data-tooltip-key={displayShortcut(keys.search)} onclick={search}><Search size={16} strokeWidth={1.6} /></button>
-    <ThemeSwitch dark={appliedTheme === 'dark'} change={onTheme} />
+    {#if !desktopWindow}{@render captureAction()}{@render quickActions()}{/if}
   </div>
 </header>
+{/if}
+</div>

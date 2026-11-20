@@ -26,9 +26,16 @@ kbd { font: var(--type-key); color: var(--muted); white-space: nowrap; }
 .app-tooltip[hidden] { display: none; }
 .app-tooltip kbd { color: var(--muted); }
 
-.app-shell { --workspace-leading: 6px; display: grid; grid-template-rows: var(--title-height) minmax(0, 1fr); height: 100%; background: var(--chrome); user-select: none; }
+.app-shell { --workspace-leading: 6px; display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; background: var(--chrome); user-select: none; }
 .app-shell.with-sidebar { --workspace-leading: var(--sidebar-width); }
-.titlebar { display: flex; align-items: center; min-width: 0; padding-right: 11px; }
+.titlebar { display: flex; align-items: center; min-width: 0; height: var(--title-height); padding-right: 11px; }
+.windows-titlebar { --window-inset: 16px; padding-bottom: 4px; }
+.window-bar { height: 36px; gap: 4px; padding-left: var(--window-inset); }
+.windows-tabs { height: 32px; }
+.app-shell:not(.with-sidebar) .windows-tabs { --workspace-leading: 0px; }
+.app-shell:not(.with-sidebar) .windows-tabs .titlebar-document { padding-left: var(--window-inset); }
+.window-actions { display: flex; flex: none; align-items: center; gap: 2px; margin-left: 4px; padding-left: 8px; border-left: 1px solid var(--line); }
+.window-actions .window-close:is(:hover, :active) { color: var(--danger); background: var(--danger-bg); }
 .titlebar-leading, .titlebar-document { display: flex; align-items: center; gap: 4px; height: 100%; }
 .titlebar-leading { width: var(--workspace-leading); min-width: max-content; flex: none; }
 .titlebar-document { flex: 1; min-width: 0; padding-left: 4px; }
@@ -130,6 +137,8 @@ kbd { font: var(--type-key); color: var(--muted); white-space: nowrap; }
 }
 .workspace-panel { min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; margin: 0 6px 6px 0; overflow: clip; background: var(--canvas); border: 1px solid var(--panel-edge); border-radius: var(--workspace-corner); }
 .workspace-panel.document-panel { margin: 0; background: var(--document-canvas); border-right: 0; border-bottom: 0; border-radius: var(--workspace-corner) 0 0; }
+.app-shell:not(.with-sidebar) .windows-titlebar + .workspace-shell:has(> .document-panel) { --workspace-leading: 0px; }
+.app-shell:not(.with-sidebar) .windows-titlebar + .workspace-shell > .document-panel { border-left: 0; border-top-left-radius: 0; }
 .document-shell { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .sidebar { display: flex; flex-direction: column; width: var(--sidebar-width); height: 100%; min-height: 0; padding: 8px 12px 4px; }
 .sidebar-nav { display: grid; gap: 2px; margin-bottom: 20px; }

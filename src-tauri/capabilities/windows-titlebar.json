@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "windows-titlebar",
+  "description": "Custom title bar for the main Windows window",
+  "platforms": ["windows"],
+  "windows": ["main"],
+  "permissions": ["core:window:allow-close", "core:window:allow-minimize", "core:window:allow-toggle-maximize", "core:window:allow-internal-toggle-maximize", "core:window:allow-is-maximized"]
+}
